@@ -46,7 +46,7 @@ const logger = loggerService.withContext('MainEntry')
 // enable local crash reports
 crashReporter.start({
   companyName: 'CherryHQ',
-  productName: 'CherryStudio',
+  productName: 'TeniulinkNode',
   submitURL: '',
   uploadToServer: false
 })
@@ -82,8 +82,8 @@ if (isLinux && process.env.XDG_SESSION_TYPE === 'wayland') {
  * This ensures the window manager identifies the app correctly on both X11 and Wayland
  */
 if (isLinux) {
-  app.commandLine.appendSwitch('class', 'CherryStudio')
-  app.commandLine.appendSwitch('name', 'CherryStudio')
+  app.commandLine.appendSwitch('class', 'TeniulinkNode')
+  app.commandLine.appendSwitch('name', 'TeniulinkNode')
 }
 
 // DocumentPolicyIncludeJSCallStacksInCrashReports: Enable features for unresponsive renderer js call stacks

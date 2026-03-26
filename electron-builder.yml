@@ -1,5 +1,5 @@
-appId: com.kangfenmao.CherryStudio
-productName: Cherry Studio
+appId: com.teniulink.node
+productName: Teniulink Node
 electronLanguages:
   - zh-CN
   - zh-TW
@@ -14,9 +14,9 @@ directories:
   buildResources: build
 
 protocols:
-  - name: Cherry Studio
+  - name: Teniulink Node
     schemes:
-      - cherrystudio
+      - teniulink
 files:
   - "**/*"
   - "!**/{.vscode,.yarn,.yarn-lock,.github,.cursorrules,.prettierrc}"
@@ -74,7 +74,7 @@ asarUnpack:
   - "node_modules/@img/sharp-libvips-*/**"
 
 win:
-  executableName: Cherry Studio
+  executableName: Teniulink Node
   artifactName: ${productName}-${version}-${arch}-setup.${ext}
   target:
     - target: nsis
@@ -111,7 +111,7 @@ dmg:
   writeUpdateInfo: false
 linux:
   artifactName: ${productName}-${version}-${arch}.${ext}
-  executableName: CherryStudio
+  executableName: TeniulinkNode
   target:
     - target: AppImage
     - target: deb
@@ -120,10 +120,10 @@ linux:
   category: Utility
   desktop:
     entry:
-      Name: Cherry Studio
-      StartupWMClass: CherryStudio
+      Name: Teniulink Node
+      StartupWMClass: TeniulinkNode
   mimeTypes:
-    - x-scheme-handler/cherrystudio
+    - x-scheme-handler/teniulink
 rpm:
   # Workaround for electron build issue on rpm package:
   # https://github.com/electron/forge/issues/3594
@@ -140,7 +140,7 @@ artifactBuildCompleted: scripts/artifact-build-completed.js
 releaseInfo:
   releaseNotes: |
     <!--LANG:en-->
-    Cherry Studio 1.8.3 - New Features and Bug Fixes
+    Teniulink Node 1.8.3 - New Features and Bug Fixes
 
     ✨ New Features
     - [Onboarding] Add guided setup flow for new users with CherryIN OAuth login and automatic model configuration
@@ -169,7 +169,7 @@ releaseInfo:
     - [Agents] Add revealing animation for agent session renaming
 
     <!--LANG:zh-CN-->
-    Cherry Studio 1.8.3 - 新功能和错误修复
+    Teniulink Node 1.8.3 - 新功能和错误修复
 
     ✨ 新功能
     - [入门] 新增新用户引导设置流程，支持 CherryIN OAuth 登录和自动模型配置

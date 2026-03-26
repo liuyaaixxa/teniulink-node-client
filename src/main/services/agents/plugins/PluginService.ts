@@ -400,7 +400,7 @@ export class PluginService {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'User-Agent': 'CherryStudio'
+        'User-Agent': 'TeniulinkNode'
       },
       body: JSON.stringify({
         target,

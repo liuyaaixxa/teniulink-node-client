@@ -436,7 +436,7 @@
     },
     "authHeaderText": "Use in Authorization header:",
     "configuration": "Configuration",
-    "description": "Expose Cherry Studio's AI capabilities through OpenAI-compatible HTTP APIs",
+    "description": "Expose Teniulink Node's AI capabilities through OpenAI-compatible HTTP APIs",
     "documentation": {
       "title": "API Documentation"
     },
@@ -2636,12 +2636,12 @@
       "select_other_provider": "Select Other Provider",
       "setup_hint": "Please configure at least one provider for the best experience",
       "subtitle": "Enjoy top-tier AI services with CherryIN",
-      "title": "Welcome to Cherry Studio"
+      "title": "Welcome to Teniulink Node"
     }
   },
   "openclaw": {
     "checking_installation": "Checking OpenClaw installation...",
-    "description": "Use Cherry Studio providers to power OpenClaw, your personal AI assistant that works across WhatsApp, Telegram, Slack, Discord and more.",
+    "description": "Use Teniulink Node providers to power OpenClaw, your personal AI assistant that works across WhatsApp, Telegram, Slack, Discord and more.",
     "error": {
       "select_provider_model": "Please select a provider and model first"
     },
@@ -3478,7 +3478,7 @@
           },
           "description": {
             "0": "Selection Assistant requires <strong>Accessibility Permission</strong> to work properly.",
-            "1": "Please click \"<strong>Go to Settings</strong>\" and click the \"<strong>Open System Settings</strong>\" button in the permission request popup that appears later. Then find \"<strong>Cherry Studio</strong>\" in the application list that appears later and turn on the permission switch.",
+            "1": "Please click \"<strong>Go to Settings</strong>\" and click the \"<strong>Open System Settings</strong>\" button in the permission request popup that appears later. Then find \"<strong>Teniulink Node</strong>\" in the application list that appears later and turn on the permission switch.",
             "2": "After completing the settings, please reopen the selection assistant."
           },
           "title": "Accessibility Permission"
@@ -3490,7 +3490,7 @@
         "title": "Application Filter List",
         "user_tips": {
           "mac": "Please enter the Bundle ID of the application, one per line, case insensitive, can be fuzzy matched. For example: com.google.Chrome, com.apple.mail, etc.",
-          "windows": "Please enter the executable file name of the application, one per line, case insensitive, can be fuzzy matched. For example: chrome.exe, weixin.exe, Cherry Studio.exe, etc."
+          "windows": "Please enter the executable file name of the application, one per line, case insensitive, can be fuzzy matched. For example: chrome.exe, weixin.exe, Teniulink Node.exe, etc."
         }
       },
       "search_modal": {
@@ -3777,14 +3777,14 @@
             "test_message_received": "Received pong from {{device}}",
             "test_message_sent": "Sent hello world test payload"
           },
-          "idle_hint": "Scan paused. Start scanning to find Cherry Studio peers on your LAN.",
+          "idle_hint": "Scan paused. Start scanning to find Teniulink Node peers on your LAN.",
           "ip_addresses": "IP addresses",
           "last_seen": "Last seen at {{time}}",
           "metadata": "Metadata",
-          "no_connection_warning": "Please open LAN Transfer on Cherry Studio mobile",
+          "no_connection_warning": "Please open LAN Transfer on Teniulink Node mobile",
           "no_devices": "No LAN peers found yet",
           "scan_devices": "Scan devices",
-          "scanning_hint": "Scanning your local network for Cherry Studio peers...",
+          "scanning_hint": "Scanning your local network for Teniulink Node peers...",
           "send_file": "Send File",
           "status": {
             "completed": "Transfer completed",
@@ -4566,7 +4566,7 @@
       },
       "oauth": {
         "callback": {
-          "message": "You can close this page and return to Cherry Studio",
+          "message": "You can close this page and return to Teniulink Node",
           "title": "Authentication Successful"
         }
       },
