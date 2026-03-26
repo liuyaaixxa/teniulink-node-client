@@ -475,7 +475,7 @@
       "running": "En cours d'exécution",
       "stopped": "Arrêté"
     },
-    "title": "Serveur API"
+    "title": "Local LLM Gateway"
   },
   "appMenu": {
     "about": "À propos",

@@ -475,7 +475,7 @@
       "running": "Rulează",
       "stopped": "Oprit"
     },
-    "title": "Server API"
+    "title": "Local LLM Gateway"
   },
   "appMenu": {
     "about": "Despre",

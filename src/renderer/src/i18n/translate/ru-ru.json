@@ -475,7 +475,7 @@
       "running": "Работает",
       "stopped": "Остановлен"
     },
-    "title": "API Сервер"
+    "title": "Local LLM Gateway"
   },
   "appMenu": {
     "about": "О",

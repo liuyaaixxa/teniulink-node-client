@@ -475,7 +475,7 @@
       "running": "Εκτελείται",
       "stopped": "Σταματημένος"
     },
-    "title": "Διακομιστής API"
+    "title": "Local LLM Gateway"
   },
   "appMenu": {
     "about": "Σχετικά",

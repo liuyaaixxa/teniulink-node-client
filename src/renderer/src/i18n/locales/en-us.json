@@ -475,7 +475,7 @@
       "running": "Running",
       "stopped": "Stopped"
     },
-    "title": "API Server"
+    "title": "Local LLM Gateway"
   },
   "appMenu": {
     "about": "About",
