@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="102" fill="#1A1A1A"/>
+  <!-- 六边形装饰 -->
+  <g opacity="0.15" fill="none" stroke="#FFD600" stroke-width="1.5">
+    <polygon points="256,60 340,110 340,210 256,260 172,210 172,110"/>
+    <polygon points="256,260 340,310 340,410 256,460 172,410 172,310"/>
+    <polygon points="100,160 170,200 170,280 100,320 30,280 30,200"/>
+    <polygon points="412,160 482,200 482,280 412,320 342,280 342,200"/>
+  </g>
+  <text x="256" y="320" font-family="Inter, -apple-system, sans-serif" font-size="180" font-weight="700" text-anchor="middle" fill="#FFD600">TU</text>
+</svg>

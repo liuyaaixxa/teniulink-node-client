@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 700">
+  <!-- Background -->
+  <rect width="900" height="700" fill="#FAFAFA"/>
+
+  <!-- Title -->
+  <text x="450" y="40" font-family="Inter, -apple-system, sans-serif" font-size="24" font-weight="600" text-anchor="middle" fill="#18181B">Teniulink Node Logo 选择方案</text>
+
+  <!-- Option 3: Split Style -->
+  <text x="150" y="90" font-family="Inter, -apple-system, sans-serif" font-size="14" font-weight="500" fill="#52525B">方案3: 分体风格</text>
+
+  <!-- Light version -->
+  <rect x="30" y="100" width="240" height="60" rx="10" fill="#FFFFFF" stroke="#E4E4E7" stroke-width="1"/>
+  <text x="150" y="140" font-family="Inter, -apple-system, sans-serif" font-size="22" text-anchor="middle">
+    <tspan font-weight="300" fill="#71717A">teni</tspan><tspan font-weight="700" fill="#18181B">link</tspan>
+  </text>
+
+  <!-- Dark version -->
+  <rect x="30" y="170" width="240" height="60" rx="10" fill="#18181B"/>
+  <text x="150" y="210" font-family="Inter, -apple-system, sans-serif" font-size="22" text-anchor="middle">
+    <tspan font-weight="300" fill="#A1A1AA">teni</tspan><tspan font-weight="700" fill="#FFFFFF">link</tspan>
+  </text>
+
+  <!-- Icon version -->
+  <rect x="30" y="240" width="60" height="60" rx="12" fill="#18181B"/>
+  <text x="60" y="280" font-family="Inter, -apple-system, sans-serif" font-size="24" text-anchor="middle">
+    <tspan font-weight="300" fill="#A1A1AA">t</tspan><tspan font-weight="700" fill="#FFFFFF">l</tspan>
+  </text>
+
+  <!-- Option 4: Abbreviation -->
+  <text x="600" y="90" font-family="Inter, -apple-system, sans-serif" font-size="14" font-weight="500" fill="#52525B">方案4: 极简缩写</text>
+
+  <!-- Light version -->
+  <rect x="480" y="100" width="240" height="60" rx="10" fill="#FFFFFF" stroke="#E4E4E7" stroke-width="1"/>
+  <text x="600" y="145" font-family="Inter, -apple-system, sans-serif" font-size="36" font-weight="700" text-anchor="middle" fill="#18181B">tl</text>
+
+  <!-- Dark version -->
+  <rect x="480" y="170" width="240" height="60" rx="10" fill="#18181B"/>
+  <text x="600" y="215" font-family="Inter, -apple-system, sans-serif" font-size="36" font-weight="700" text-anchor="middle" fill="#FFFFFF">tl</text>
+
+  <!-- Icon versions -->
+  <rect x="480" y="240" width="60" height="60" rx="12" fill="#18181B"/>
+  <text x="510" y="282" font-family="Inter, -apple-system, sans-serif" font-size="28" font-weight="700" text-anchor="middle" fill="#FFFFFF">tl</text>
+
+  <rect x="550" y="240" width="60" height="60" rx="12" fill="#2563EB"/>
+  <text x="580" y="282" font-family="Inter, -apple-system, sans-serif" font-size="28" font-weight="700" text-anchor="middle" fill="#FFFFFF">tl</text>
+
+  <rect x="620" y="240" width="60" height="60" rx="12" fill="#7C3AED"/>
+  <text x="650" y="282" font-family="Inter, -apple-system, sans-serif" font-size="28" font-weight="700" text-anchor="middle" fill="#FFFFFF">tl</text>
+
+  <rect x="690" y="240" width="60" height="60" rx="12" fill="#059669"/>
+  <text x="720" y="282" font-family="Inter, -apple-system, sans-serif" font-size="28" font-weight="700" text-anchor="middle" fill="#FFFFFF">tl</text>
+
+  <!-- Option 5: Mixed -->
+  <text x="150" y="380" font-family="Inter, -apple-system, sans-serif" font-size="14" font-weight="500" fill="#52525B">方案5: 大小混合</text>
+
+  <!-- Light version -->
+  <rect x="30" y="390" width="240" height="60" rx="10" fill="#FFFFFF" stroke="#E4E4E7" stroke-width="1"/>
+  <text x="150" y="432" font-family="Inter, -apple-system, sans-serif" font-size="26" text-anchor="middle">
+    <tspan font-weight="700" fill="#18181B">TENIU</tspan><tspan font-weight="400" fill="#71717A">link</tspan>
+  </text>
+
+  <!-- Dark version -->
+  <rect x="30" y="460" width="240" height="60" rx="10" fill="#18181B"/>
+  <text x="150" y="502" font-family="Inter, -apple-system, sans-serif" font-size="26" text-anchor="middle">
+    <tspan font-weight="700" fill="#FFFFFF">TENIU</tspan><tspan font-weight="400" fill="#A1A1AA">link</tspan>
+  </text>
+
+  <!-- Icon version -->
+  <rect x="30" y="530" width="60" height="60" rx="12" fill="#18181B"/>
+  <text x="60" y="572" font-family="Inter, -apple-system, sans-serif" font-size="26" font-weight="700" text-anchor="middle" fill="#FFFFFF">T</text>
+
+  <rect x="100" y="530" width="60" height="60" rx="12" fill="#2563EB"/>
+  <text x="130" y="572" font-family="Inter, -apple-system, sans-serif" font-size="26" font-weight="700" text-anchor="middle" fill="#FFFFFF">T</text>
+
+  <rect x="170" y="530" width="60" height="60" rx="12" fill="#7C3AED"/>
+  <text x="200" y="572" font-family="Inter, -apple-system, sans-serif" font-size="26" font-weight="700" text-anchor="middle" fill="#FFFFFF">T</text>
+
+  <!-- 512x512 App Icons Preview -->
+  <text x="600" y="380" font-family="Inter, -apple-system, sans-serif" font-size="14" font-weight="500" fill="#52525B">App Icon 预览 (512x512)</text>
+
+  <!-- Split icon -->
+  <rect x="480" y="390" width="120" height="120" rx="24" fill="#18181B"/>
+  <text x="540" y="465" font-family="Inter, -apple-system, sans-serif" font-size="32" text-anchor="middle">
+    <tspan font-weight="300" fill="#A1A1AA">teni</tspan><tspan font-weight="700" fill="#FFFFFF">link</tspan>
+  </text>
+
+  <!-- Abbreviation icon -->
+  <rect x="620" y="390" width="120" height="120" rx="24" fill="#18181B"/>
+  <text x="680" y="470" font-family="Inter, -apple-system, sans-serif" font-size="48" font-weight="700" text-anchor="middle" fill="#FFFFFF">tl</text>
+
+  <!-- Mixed icon -->
+  <rect x="480" y="530" width="120" height="120" rx="24" fill="#18181B"/>
+  <text x="540" y="590" font-family="Inter, -apple-system, sans-serif" font-size="36" text-anchor="middle">
+    <tspan font-weight="700" fill="#FFFFFF">TENIU</tspan><tspan font-weight="400" fill="#A1A1AA">link</tspan>
+  </text>
+
+  <!-- Blue accent version -->
+  <rect x="620" y="530" width="120" height="120" rx="24" fill="#2563EB"/>
+  <text x="680" y="590" font-family="Inter, -apple-system, sans-serif" font-size="36" text-anchor="middle">
+    <tspan font-weight="700" fill="#FFFFFF">TENIU</tspan><tspan font-weight="400" fill="#BFDBFE">link</tspan>
+  </text>
+
+  <!-- Footer -->
+  <text x="450" y="680" font-family="Inter, -apple-system, sans-serif" font-size="11" text-anchor="middle" fill="#A1A1AA">Teniulink Node Logo Design | 2026</text>
+</svg>
