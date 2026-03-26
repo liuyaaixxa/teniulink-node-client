@@ -30,6 +30,7 @@ import type {
   PaintingProvider,
   S3Config,
   SidebarIcon,
+  TeniuCloudConfig,
   TranslateLanguageCode
 } from '@renderer/types'
 import { ThemeMode } from '@renderer/types'
@@ -38,6 +39,7 @@ import type {
   OpenAIReasoningSummary,
   OpenAIVerbosity
 } from '@renderer/types/aiCoreTypes'
+import { TENIU_CLOUD_DEFAULTS } from '@renderer/types/teniuCloud'
 import { API_SERVER_DEFAULTS, UpgradeChannel } from '@shared/config/constant'
 import { v4 as uuid } from 'uuid'
 
@@ -247,6 +249,8 @@ export interface SettingsState {
   navbarPosition: 'left' | 'top'
   // API Server
   apiServer: ApiServerConfig
+  // Teniu Cloud
+  teniuCloud: TeniuCloudConfig
   showMessageOutline: boolean
 }
 
@@ -448,6 +452,11 @@ export const initialState: SettingsState = {
     host: API_SERVER_DEFAULTS.HOST,
     port: API_SERVER_DEFAULTS.PORT,
     apiKey: `cs-sk-${uuid()}`
+  },
+  // Teniu Cloud
+  teniuCloud: {
+    apiUrl: TENIU_CLOUD_DEFAULTS.API_URL,
+    apiKey: ''
   },
   showMessageOutline: false
 }
@@ -897,6 +906,19 @@ const settingsSlice = createSlice({
         apiKey: action.payload
       }
     },
+    // Teniu Cloud actions
+    setTeniuCloudApiUrl: (state, action: PayloadAction<string>) => {
+      state.teniuCloud = {
+        ...state.teniuCloud,
+        apiUrl: action.payload
+      }
+    },
+    setTeniuCloudApiKey: (state, action: PayloadAction<string>) => {
+      state.teniuCloud = {
+        ...state.teniuCloud,
+        apiKey: action.payload
+      }
+    },
     setShowMessageOutline: (state, action: PayloadAction<boolean>) => {
       state.showMessageOutline = action.payload
     }
@@ -1033,7 +1055,10 @@ export const {
   // API Server actions
   setApiServerEnabled,
   setApiServerPort,
-  setApiServerApiKey
+  setApiServerApiKey,
+  // Teniu Cloud actions
+  setTeniuCloudApiUrl,
+  setTeniuCloudApiKey
 } = settingsSlice.actions
 
 export default settingsSlice.reducer

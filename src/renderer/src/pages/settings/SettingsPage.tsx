@@ -37,6 +37,7 @@ import QuickPhraseSettings from './QuickPhraseSettings'
 import SelectionAssistantSettings from './SelectionAssistantSettings/SelectionAssistantSettings'
 import ShortcutSettings from './ShortcutSettings'
 import { ApiServerSettings } from './ToolSettings/ApiServerSettings'
+import TeniuCloudSettings from './ToolSettings/TeniuCloudSettings/TeniuCloudSettings'
 import WebSearchSettings from './WebSearchSettings'
 
 const SettingsPage: FC = () => {
@@ -52,6 +53,21 @@ const SettingsPage: FC = () => {
       </Navbar>
       <ContentContainer id="content-container">
         <SettingMenus>
+          {/* Teniu云 - 第一位 */}
+          <MenuItemLink to="/settings/teniu-cloud">
+            <MenuItem className={isRoute('/settings/teniu-cloud')}>
+              <Cloud size={18} />
+              {t('teniuCloud.title')}
+            </MenuItem>
+          </MenuItemLink>
+          {/* 本地智能网关 - 第二位 */}
+          <MenuItemLink to="/settings/api-server">
+            <MenuItem className={isRoute('/settings/api-server')}>
+              <Server size={18} />
+              {t('apiServer.title')}
+            </MenuItem>
+          </MenuItemLink>
+          {/* 模型服务 - 第三位 */}
           <MenuItemLink to="/settings/provider">
             <MenuItem className={isRoute('/settings/provider')}>
               <Cloud size={18} />
@@ -102,12 +118,6 @@ const SettingsPage: FC = () => {
               {t('memory.title')}
             </MenuItem>
           </MenuItemLink>
-          <MenuItemLink to="/settings/api-server">
-            <MenuItem className={isRoute('/settings/api-server')}>
-              <Server size={18} />
-              {t('apiServer.title')}
-            </MenuItem>
-          </MenuItemLink>
           <MenuItemLink to="/settings/docprocess">
             <MenuItem className={isRoute('/settings/docprocess')}>
               <FileCode size={18} />
@@ -149,6 +159,7 @@ const SettingsPage: FC = () => {
         </SettingMenus>
         <SettingContent>
           <Routes>
+            <Route path="teniu-cloud" element={<TeniuCloudSettings />} />
             <Route path="provider" element={<ProviderList />} />
             <Route path="model" element={<ModelSettings />} />
             <Route path="websearch/*" element={<WebSearchSettings />} />

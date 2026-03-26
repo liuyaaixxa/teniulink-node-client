@@ -5498,6 +5498,24 @@
       "title": "缩放"
     }
   },
+  "teniuCloud": {
+    "description": "配置 Teniu云 远程服务连接",
+    "fields": {
+      "apiKey": {
+        "description": "用于身份验证的 API 秘钥",
+        "label": "访问秘钥",
+        "placeholder": "tu-xxxxxxxxxxx"
+      },
+      "apiUrl": {
+        "description": "Teniu云 服务的 API 地址",
+        "label": "远程地址"
+      }
+    },
+    "messages": {
+      "saveSuccess": "配置已保存"
+    },
+    "title": "Teniu云"
+  },
   "title": {
     "apps": "小程序",
     "code": "Code",

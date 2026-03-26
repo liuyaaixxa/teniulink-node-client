@@ -5498,6 +5498,24 @@
       "title": "Zoom"
     }
   },
+  "teniuCloud": {
+    "description": "Configure Teniu Cloud remote service connection",
+    "fields": {
+      "apiKey": {
+        "description": "API key for authentication",
+        "label": "API Key",
+        "placeholder": "tu-xxxxxxxxxxx"
+      },
+      "apiUrl": {
+        "description": "The API URL of Teniu Cloud service",
+        "label": "API URL"
+      }
+    },
+    "messages": {
+      "saveSuccess": "Configuration saved"
+    },
+    "title": "Teniu Cloud"
+  },
   "title": {
     "apps": "Mini-programmes",
     "code": "Code",

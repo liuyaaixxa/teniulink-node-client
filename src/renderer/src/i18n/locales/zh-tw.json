@@ -5498,6 +5498,24 @@
       "title": "縮放"
     }
   },
+  "teniuCloud": {
+    "description": "配置 Teniu雲 遠端服務連線",
+    "fields": {
+      "apiKey": {
+        "description": "用於身份驗證的 API 金鑰",
+        "label": "存取金鑰",
+        "placeholder": "tu-xxxxxxxxxxx"
+      },
+      "apiUrl": {
+        "description": "Teniu雲 服務的 API 位址",
+        "label": "遠端位址"
+      }
+    },
+    "messages": {
+      "saveSuccess": "設定已儲存"
+    },
+    "title": "Teniu雲"
+  },
   "title": {
     "apps": "小程式",
     "code": "程式碼",
