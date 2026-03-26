@@ -19,7 +19,10 @@ const TeniuCloudSettings: FC = () => {
   const dispatch = useAppDispatch()
   const { t } = useTranslation()
 
-  const teniuCloudConfig = useSelector((state: RootState) => state.settings.teniuCloud)
+  const teniuCloudConfig = useSelector((state: RootState) => state.settings.teniuCloud) || {
+    apiUrl: 'https://teniuapi.cloud',
+    apiKey: ''
+  }
 
   const handleApiUrlChange = (value: string) => {
     dispatch(setTeniuCloudApiUrl(value))
