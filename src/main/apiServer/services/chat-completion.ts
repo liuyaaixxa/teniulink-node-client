@@ -55,7 +55,8 @@ export class ChatCompletionService {
     const provider = modelValidation.provider!
 
     // Support OpenAI-compatible providers (ollama provides /v1 compatible endpoint)
-    const openaiCompatibleTypes = ['openai', 'ollama']
+    // openai-response type includes providers like HuggingFace that use OpenAI-compatible API
+    const openaiCompatibleTypes = ['openai', 'ollama', 'openai-response']
     if (!openaiCompatibleTypes.includes(provider.type)) {
       return {
         ok: false,
