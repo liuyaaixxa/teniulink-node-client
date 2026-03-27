@@ -31,6 +31,7 @@ import type {
   S3Config,
   SidebarIcon,
   TeniuCloudConfig,
+  TeniuCloudConnectionStatus,
   TranslateLanguageCode
 } from '@renderer/types'
 import { ThemeMode } from '@renderer/types'
@@ -456,7 +457,8 @@ export const initialState: SettingsState = {
   // Teniu Cloud
   teniuCloud: {
     apiUrl: TENIU_CLOUD_DEFAULTS.API_URL,
-    apiKey: ''
+    apiKey: '',
+    connectionStatus: 'disconnected'
   },
   showMessageOutline: false
 }
@@ -919,6 +921,12 @@ const settingsSlice = createSlice({
         apiKey: action.payload
       }
     },
+    setTeniuCloudConnectionStatus: (state, action: PayloadAction<TeniuCloudConnectionStatus>) => {
+      state.teniuCloud = {
+        ...state.teniuCloud,
+        connectionStatus: action.payload
+      }
+    },
     setShowMessageOutline: (state, action: PayloadAction<boolean>) => {
       state.showMessageOutline = action.payload
     }
@@ -1058,7 +1066,8 @@ export const {
   setApiServerApiKey,
   // Teniu Cloud actions
   setTeniuCloudApiUrl,
-  setTeniuCloudApiKey
+  setTeniuCloudApiKey,
+  setTeniuCloudConnectionStatus
 } = settingsSlice.actions
 
 export default settingsSlice.reducer

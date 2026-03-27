@@ -1,6 +1,9 @@
+export type TeniuCloudConnectionStatus = 'disconnected' | 'connecting' | 'connected'
+
 export type TeniuCloudConfig = {
   apiUrl: string
   apiKey: string
+  connectionStatus: TeniuCloudConnectionStatus
 }
 
 export const TENIU_CLOUD_DEFAULTS = {

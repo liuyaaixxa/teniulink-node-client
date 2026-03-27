@@ -3396,13 +3396,27 @@ const migrateConfig = {
       if (!state.settings.teniuCloud) {
         state.settings.teniuCloud = {
           apiUrl: 'https://teniuapi.cloud',
-          apiKey: ''
+          apiKey: '',
+          connectionStatus: 'disconnected'
         }
       }
       logger.info('migrate 206 success')
       return state
     } catch (error) {
       logger.error('migrate 206 error', error as Error)
+      return state
+    }
+  },
+  '207': (state: RootState) => {
+    try {
+      // Add connectionStatus to teniuCloud configuration
+      if (state.settings.teniuCloud) {
+        state.settings.teniuCloud.connectionStatus = 'disconnected'
+      }
+      logger.info('migrate 207 success')
+      return state
+    } catch (error) {
+      logger.error('migrate 207 error', error as Error)
       return state
     }
   }
