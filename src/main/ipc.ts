@@ -88,6 +88,7 @@ import {
   tokenUsage
 } from './services/SpanCacheService'
 import storeSyncService from './services/StoreSyncService'
+import { teniuCloudService } from './services/TeniuCloudService'
 import { themeService } from './services/ThemeService'
 import VertexAIService from './services/VertexAIService'
 import { setOpenLinkExternal } from './services/WebviewService'
@@ -1212,4 +1213,11 @@ export async function registerIpc(mainWindow: BrowserWindow, app: Electron.App) 
   ipcMain.handle(IpcChannel.Analytics_TrackTokenUsage, (_, data: TokenUsageData) =>
     analyticsService.trackTokenUsage(data)
   )
+
+  // Teniu Cloud
+  ipcMain.handle(IpcChannel.TeniuCloud_Connect, (_, apiUrl: string, apiKey: string) =>
+    teniuCloudService.connect(apiUrl, apiKey)
+  )
+  ipcMain.handle(IpcChannel.TeniuCloud_Disconnect, () => teniuCloudService.disconnect())
+  ipcMain.handle(IpcChannel.TeniuCloud_CheckStatus, () => teniuCloudService.checkStatus())
 }
