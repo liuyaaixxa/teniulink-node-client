@@ -70,7 +70,7 @@ const SettingsPage: FC = () => {
           {/* 模型服务 - 第三位 */}
           <MenuItemLink to="/settings/provider">
             <MenuItem className={isRoute('/settings/provider')}>
-              <Cloud size={18} />
+              <Package size={18} />
               {t('settings.provider.title')}
             </MenuItem>
           </MenuItemLink>
