@@ -53,6 +53,11 @@ export enum IpcChannel {
   App_SetDisableHardwareAcceleration = 'app:set-disable-hardware-acceleration',
   App_SetUseSystemTitleBar = 'app:set-use-system-title-bar',
 
+  // Teniu Cloud
+  TeniuCloud_Connect = 'teniu-cloud:connect',
+  TeniuCloud_Disconnect = 'teniu-cloud:disconnect',
+  TeniuCloud_CheckStatus = 'teniu-cloud:check-status',
+
   Notification_Send = 'notification:send',
   Notification_OnClick = 'notification:on-click',
 
