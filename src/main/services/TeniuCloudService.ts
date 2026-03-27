@@ -124,10 +124,12 @@ export async function disconnect(): Promise<CommandResult> {
 
     // If the error indicates no active connection/domain, treat as success
     // since we're already disconnected
+    const lowerErrorMsg = errorMessage.toLowerCase()
     if (
-      errorMessage.toLowerCase().includes('domain not set') ||
-      errorMessage.toLowerCase().includes('not logged in') ||
-      errorMessage.toLowerCase().includes('not connected')
+      lowerErrorMsg.includes('domain is not set') ||
+      lowerErrorMsg.includes('domain not set') ||
+      lowerErrorMsg.includes('not logged in') ||
+      lowerErrorMsg.includes('not connected')
     ) {
       logger.info('No active connection to disconnect (already disconnected)')
       return { success: true }
