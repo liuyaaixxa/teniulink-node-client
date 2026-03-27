@@ -17,11 +17,9 @@ export class OcrApiClientFactory {
       config: provider.config
     })
 
-    let instance: OcrBaseApiClient
-
     // Extend other clients here
-     
-    instance = new OcrExampleApiClient(provider)
+
+    const instance = new OcrExampleApiClient(provider)
 
     return instance
   }

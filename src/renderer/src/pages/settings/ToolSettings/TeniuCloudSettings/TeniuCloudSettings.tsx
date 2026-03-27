@@ -5,7 +5,7 @@ import { useAppDispatch } from '@renderer/store'
 import { setTeniuCloudApiKey, setTeniuCloudApiUrl, setTeniuCloudConnectionStatus } from '@renderer/store/settings'
 import type { TeniuCloudConnectionStatus } from '@renderer/types'
 import { TENIU_CLOUD_DEFAULTS } from '@renderer/types/teniuCloud'
-import { Alert, Button, Input, Modal, Spin, Typography } from 'antd'
+import { Button, Input, Modal, Spin, Typography } from 'antd'
 import { CloudOff, Link, Unlink } from 'lucide-react'
 import type { FC } from 'react'
 import { useEffect, useState } from 'react'
@@ -33,7 +33,8 @@ const TeniuCloudSettings: FC = () => {
 
   // Check connection status on mount
   useEffect(() => {
-    checkConnectionStatus()
+    void checkConnectionStatus()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const checkConnectionStatus = async () => {
@@ -126,7 +127,7 @@ const TeniuCloudSettings: FC = () => {
       {/* Header Section */}
       <HeaderSection>
         <HeaderContent>
-          <Title level={3} style={{ margin: 0, marginBottom: 8 }}>
+          <Title level={3} style={{ margin: 0 }}>
             {t('teniuCloud.title')}
           </Title>
           <Text type="secondary">{t('teniuCloud.description')}</Text>
@@ -137,82 +138,80 @@ const TeniuCloudSettings: FC = () => {
         </StatusBadge>
       </HeaderSection>
 
-      {/* Connection Status Panel */}
-      <ConnectionPanel $connected={isConnected}>
-        <StatusSection>
-          {isConnected ? (
-            <>
+      {/* Main Card - Contains all configuration and status */}
+      <MainCard>
+        {/* Connection Status Row */}
+        <StatusRow>
+          <StatusIcon $connected={isConnected}>
+            {isConnected ? (
               <Link size={20} style={{ color: 'var(--color-status-success)' }} />
-              <StatusContent>
-                <StatusText $connected>{t('teniuCloud.status.connected')}</StatusText>
-                <StatusSubtext>{teniuCloudConfig.apiUrl}</StatusSubtext>
-              </StatusContent>
-            </>
-          ) : (
-            <>
+            ) : (
               <CloudOff size={20} style={{ color: 'var(--color-text-3)' }} />
-              <StatusContent>
-                <StatusText $connected={false}>{t('teniuCloud.status.disconnected')}</StatusText>
-                <StatusSubtext>{t('teniuCloud.status.configurePrompt')}</StatusSubtext>
-              </StatusContent>
-            </>
-          )}
-        </StatusSection>
+            )}
+          </StatusIcon>
+          <StatusInfo>
+            <StatusLabel $connected={isConnected}>
+              {isConnected ? t('teniuCloud.status.connected') : t('teniuCloud.status.disconnected')}
+            </StatusLabel>
+            <StatusValue>{teniuCloudConfig.apiUrl || t('teniuCloud.status.configurePrompt')}</StatusValue>
+          </StatusInfo>
+          <ControlSection>
+            {isLoading || isConnecting ? (
+              <LoadingContainer>
+                <Spin size="small" />
+                <LoadingText>{t('teniuCloud.status.connecting')}</LoadingText>
+              </LoadingContainer>
+            ) : isConnected ? (
+              <DisconnectButton onClick={handleDisconnect}>
+                <Unlink size={14} />
+                {t('teniuCloud.actions.disconnect')}
+              </DisconnectButton>
+            ) : (
+              <ConnectButton type="primary" onClick={handleConnect}>
+                <Link size={14} />
+                {t('teniuCloud.actions.connect')}
+              </ConnectButton>
+            )}
+          </ControlSection>
+        </StatusRow>
 
-        <ControlSection>
-          {isLoading || isConnecting ? (
-            <LoadingContainer>
-              <Spin size="small" />
-              <LoadingText>{t('teniuCloud.status.connecting')}</LoadingText>
-            </LoadingContainer>
-          ) : isConnected ? (
-            <DisconnectButton onClick={handleDisconnect}>
-              <Unlink size={14} />
-              {t('teniuCloud.actions.disconnect')}
-            </DisconnectButton>
-          ) : (
-            <ConnectButton type="primary" onClick={handleConnect}>
-              <Link size={14} />
-              {t('teniuCloud.actions.connect')}
-            </ConnectButton>
-          )}
-        </ControlSection>
-      </ConnectionPanel>
+        {/* Divider */}
+        <Divider />
 
-      {/* API URL Configuration */}
-      <ConfigurationField>
-        <FieldLabel>{t('teniuCloud.fields.apiUrl.label')}</FieldLabel>
-        <FieldDescription>{t('teniuCloud.fields.apiUrl.description')}</FieldDescription>
-        <StyledInput
-          value={teniuCloudConfig.apiUrl}
-          onChange={(e) => handleApiUrlChange(e.target.value)}
-          placeholder={TENIU_CLOUD_DEFAULTS.API_URL}
-          size="middle"
-          disabled={isConnected}
-        />
-      </ConfigurationField>
+        {/* Configuration Fields */}
+        <ConfigRow>
+          <FieldGroup>
+            <FieldLabel>{t('teniuCloud.fields.apiUrl.label')}</FieldLabel>
+            <StyledInput
+              value={teniuCloudConfig.apiUrl}
+              onChange={(e) => handleApiUrlChange(e.target.value)}
+              placeholder={TENIU_CLOUD_DEFAULTS.API_URL}
+              size="middle"
+              disabled={isConnected}
+            />
+          </FieldGroup>
+          <FieldGroup>
+            <FieldLabel>{t('teniuCloud.fields.apiKey.label')}</FieldLabel>
+            <StyledInput
+              value={teniuCloudConfig.apiKey}
+              onChange={(e) => handleApiKeyChange(e.target.value)}
+              placeholder={t('teniuCloud.fields.apiKey.placeholder')}
+              size="middle"
+              type="password"
+              disabled={isConnected}
+            />
+          </FieldGroup>
+        </ConfigRow>
 
-      {/* API Key Configuration */}
-      <ConfigurationField>
-        <FieldLabel>{t('teniuCloud.fields.apiKey.label')}</FieldLabel>
-        <FieldDescription>{t('teniuCloud.fields.apiKey.description')}</FieldDescription>
-        <StyledInput
-          value={teniuCloudConfig.apiKey}
-          onChange={(e) => handleApiKeyChange(e.target.value)}
-          placeholder={t('teniuCloud.fields.apiKey.placeholder')}
-          size="middle"
-          type="password"
-          disabled={isConnected}
-        />
-      </ConfigurationField>
+        {/* Divider */}
+        <Divider />
 
-      {/* Info Alert */}
-      <InfoAlert
-        message={t('teniuCloud.info.title')}
-        description={t('teniuCloud.info.description')}
-        type="info"
-        showIcon
-      />
+        {/* Info Section */}
+        <InfoSection>
+          <InfoTitle>{t('teniuCloud.info.title')}</InfoTitle>
+          <InfoDescription>{t('teniuCloud.info.description')}</InfoDescription>
+        </InfoSection>
+      </MainCard>
     </Container>
   )
 }
@@ -221,7 +220,7 @@ const TeniuCloudSettings: FC = () => {
 const Container = styled(SettingContainer)`
   display: flex;
   flex-direction: column;
-  height: calc(100vh - var(--navbar-height));
+  gap: 16px;
 `
 
 const HeaderSection = styled.div`
@@ -229,7 +228,7 @@ const HeaderSection = styled.div`
   flex-direction: row;
   align-items: flex-start;
   justify-content: space-between;
-  margin-bottom: 24px;
+  margin-bottom: 8px;
 `
 
 const HeaderContent = styled.div`
@@ -282,36 +281,46 @@ const StatusDot = styled.div<{ $status: string }>`
   }};
 `
 
-const ConnectionPanel = styled.div<{ $connected: boolean }>`
+const MainCard = styled.div`
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  background: var(--color-background);
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+`
+
+const StatusRow = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
-  border-radius: 8px;
-  background: var(--color-background);
-  border: 1px solid ${(props) => (props.$connected ? 'var(--color-status-success)' : 'var(--color-border)')};
-  margin-bottom: 16px;
+  gap: 16px;
 `
 
-const StatusSection = styled.div`
+const StatusIcon = styled.div<{ $connected: boolean }>`
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: center;
+  border-radius: 50%;
+  background: ${(props) => (props.$connected ? 'rgba(82, 196, 26, 0.1)' : 'var(--color-background-soft)')};
 `
 
-const StatusContent = styled.div`
+const StatusInfo = styled.div`
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 2px;
 `
 
-const StatusText = styled.div<{ $connected: boolean }>`
+const StatusLabel = styled.div<{ $connected: boolean }>`
   font-weight: 600;
-  font-size: 14px;
+  font-size: 16px;
   color: ${(props) => (props.$connected ? 'var(--color-status-success)' : 'var(--color-text-1)')};
 `
 
-const StatusSubtext = styled.div`
+const StatusValue = styled.div`
   font-size: 12px;
   color: var(--color-text-3);
 `
@@ -342,7 +351,7 @@ const DisconnectButton = styled.div`
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 4px 15px;
+  padding: 6px 16px;
   border-radius: 6px;
   background: var(--color-background-soft);
   border: 1px solid var(--color-border);
@@ -357,15 +366,22 @@ const DisconnectButton = styled.div`
   }
 `
 
-const ConfigurationField = styled.div`
+const Divider = styled.div`
+  height: 1px;
+  background: var(--color-border);
+  margin: 16px 0;
+`
+
+const ConfigRow = styled.div`
+  display: flex;
+  gap: 16px;
+`
+
+const FieldGroup = styled.div`
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 16px;
-  background: var(--color-background);
-  border-radius: 8px;
-  border: 1px solid var(--color-border);
-  margin-bottom: 16px;
 `
 
 const FieldLabel = styled.div`
@@ -374,19 +390,28 @@ const FieldLabel = styled.div`
   color: var(--color-text-1);
 `
 
-const FieldDescription = styled.div`
-  font-size: 12px;
-  color: var(--color-text-3);
-`
-
 const StyledInput = styled(Input)`
   width: 100%;
   border-radius: 6px;
   border: 1.5px solid var(--color-border);
 `
 
-const InfoAlert = styled(Alert)`
-  margin-top: 16px;
+const InfoSection = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+`
+
+const InfoTitle = styled.div`
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-1);
+`
+
+const InfoDescription = styled.div`
+  font-size: 12px;
+  color: var(--color-text-3);
+  line-height: 1.5;
 `
 
 export default TeniuCloudSettings
