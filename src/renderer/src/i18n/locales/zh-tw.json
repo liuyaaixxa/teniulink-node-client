@@ -5525,6 +5525,10 @@
     }
   },
   "teniuCloud": {
+    "actions": {
+      "connect": "連線",
+      "disconnect": "中斷連線"
+    },
     "description": "配置 Teniu雲 遠端服務連線",
     "fields": {
       "apiKey": {
@@ -5537,8 +5541,24 @@
         "label": "遠端位址"
       }
     },
+    "info": {
+      "description": "Teniu雲 提供安全的 AI 服務遠端存取。設定您的 API 位址和金鑰，然後點擊連線以建立連線。",
+      "title": "關於 Teniu雲 連線"
+    },
     "messages": {
+      "configRequired": "請先設定 API 位址和存取金鑰",
+      "connectFailed": "連線 Teniu雲 失敗",
+      "connectSuccess": "已連線到 Teniu雲",
+      "disconnectFailed": "中斷連線失敗",
+      "disconnectSuccess": "已中斷與 Teniu雲 的連線",
+      "errorTitle": "連線錯誤",
       "saveSuccess": "設定已儲存"
+    },
+    "status": {
+      "configurePrompt": "設定 API 位址和存取金鑰以連線",
+      "connected": "已連線",
+      "connecting": "連線中...",
+      "disconnected": "未連線"
     },
     "title": "Teniu雲"
   },

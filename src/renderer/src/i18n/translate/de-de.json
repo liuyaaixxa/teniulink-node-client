@@ -5525,6 +5525,10 @@
     }
   },
   "teniuCloud": {
+    "actions": {
+      "connect": "[to be translated]:Connect",
+      "disconnect": "[to be translated]:Disconnect"
+    },
     "description": "Configure Teniu Cloud remote service connection",
     "fields": {
       "apiKey": {
@@ -5537,8 +5541,24 @@
         "label": "API URL"
       }
     },
+    "info": {
+      "description": "[to be translated]:Teniu Cloud provides secure remote access to AI services. Configure your API URL and key, then click Connect to establish a connection.",
+      "title": "[to be translated]:About Teniu Cloud Connection"
+    },
     "messages": {
+      "configRequired": "[to be translated]:Please configure API URL and API Key first",
+      "connectFailed": "[to be translated]:Failed to connect to Teniu Cloud",
+      "connectSuccess": "[to be translated]:Connected to Teniu Cloud",
+      "disconnectFailed": "[to be translated]:Failed to disconnect from Teniu Cloud",
+      "disconnectSuccess": "[to be translated]:Disconnected from Teniu Cloud",
+      "errorTitle": "[to be translated]:Connection Error",
       "saveSuccess": "Configuration saved"
+    },
+    "status": {
+      "configurePrompt": "[to be translated]:Configure API URL and API Key to connect",
+      "connected": "[to be translated]:Connected",
+      "connecting": "[to be translated]:Connecting...",
+      "disconnected": "[to be translated]:Disconnected"
     },
     "title": "Teniu Cloud"
   },
