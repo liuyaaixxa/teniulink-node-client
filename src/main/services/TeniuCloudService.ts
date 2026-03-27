@@ -121,6 +121,18 @@ export async function disconnect(): Promise<CommandResult> {
     return { success: true }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)
+
+    // If the error indicates no active connection/domain, treat as success
+    // since we're already disconnected
+    if (
+      errorMessage.toLowerCase().includes('domain not set') ||
+      errorMessage.toLowerCase().includes('not logged in') ||
+      errorMessage.toLowerCase().includes('not connected')
+    ) {
+      logger.info('No active connection to disconnect (already disconnected)')
+      return { success: true }
+    }
+
     logger.error('Failed to disconnect from Teniu Cloud:', error as Error)
     return { success: false, error: errorMessage }
   }
