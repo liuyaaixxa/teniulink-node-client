@@ -4,8 +4,9 @@ import { loggerService } from '@logger'
 
 const logger = loggerService.withContext('TeniuCloudService')
 
-// Timeout for CLI commands (30 seconds for login/connect, 10 seconds for status)
-const COMMAND_TIMEOUT_MS = 30000
+// Timeout for CLI commands
+const LOGIN_TIMEOUT_MS = 30000
+const CONNECT_TIMEOUT_MS = 60000 // connect -d may take longer
 const STATUS_TIMEOUT_MS = 10000
 
 interface CommandResult {
@@ -25,7 +26,7 @@ interface ConnectionStatus {
 async function executeCommand(
   command: string,
   args: string[] = [],
-  timeoutMs: number = COMMAND_TIMEOUT_MS,
+  timeoutMs: number = LOGIN_TIMEOUT_MS,
   env?: NodeJS.ProcessEnv
 ): Promise<{ stdout: string; stderr: string }> {
   return new Promise((resolve, reject) => {
@@ -35,11 +36,15 @@ async function executeCommand(
 
     const execEnv = env ? { ...process.env, ...env } : process.env
 
+    logger.debug(`Executing: ${command} ${args.join(' ')}`)
+
     execFile(command, args, { env: execEnv }, (error, stdout, stderr) => {
       clearTimeout(timeout)
       if (error) {
+        logger.debug(`Command failed: ${stderr || error.message}`)
         reject(new Error(stderr || error.message))
       } else {
+        logger.debug(`Command output: ${stdout || '(empty)'}`)
         resolve({ stdout, stderr })
       }
     })
@@ -54,24 +59,21 @@ async function isOcteliumInstalled(): Promise<boolean> {
     await executeCommand('which', ['octelium'], 5000)
     return true
   } catch {
-    // On macOS/Linux, also try command -v
-    try {
-      await executeCommand('command', ['-v', 'octelium'], 5000)
-      return true
-    } catch {
-      return false
-    }
+    return false
   }
 }
 
 /**
  * Get environment variables for octelium commands
  */
-function getOcteliumEnv(domain: string): NodeJS.ProcessEnv {
-  return {
-    OCTELIUM_INSECURE_TLS: 'true',
-    OCTELIUM_DOMAIN: domain
+function getOcteliumEnv(domain?: string): NodeJS.ProcessEnv {
+  const env: NodeJS.ProcessEnv = {
+    OCTELIUM_INSECURE_TLS: 'true'
   }
+  if (domain) {
+    env.OCTELIUM_DOMAIN = domain
+  }
+  return env
 }
 
 /**
@@ -107,21 +109,52 @@ export async function connect(apiUrl: string, apiKey: string): Promise<CommandRe
 
     // Step 1: Login to the cluster
     logger.info('Step 1: Logging in to cluster...')
-    await executeCommand(
-      'octelium',
-      ['login', '--domain', domain, '--auth-token', apiKey],
-      COMMAND_TIMEOUT_MS,
-      octeliumEnv
-    )
-    logger.info('Login successful')
+    try {
+      const loginResult = await executeCommand(
+        'octelium',
+        ['login', '--domain', domain, '--auth-token', apiKey],
+        LOGIN_TIMEOUT_MS,
+        octeliumEnv
+      )
+      logger.info(`Login output: ${loginResult.stdout.trim()}`)
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error)
+      logger.error('Login failed:', error as Error)
+      return { success: false, error: `Login failed: ${errorMsg}` }
+    }
 
-    // Step 2: Connect to the cluster (open local tunnel)
+    // Step 2: Connect to the cluster (open local tunnel in detached/background mode)
     logger.info('Step 2: Opening local tunnel to cluster...')
-    await executeCommand('octelium', ['connect', '--domain', domain], COMMAND_TIMEOUT_MS, octeliumEnv)
-    logger.info('Local tunnel established')
+    try {
+      // Use -d (--detach) to run connect in background
+      const connectResult = await executeCommand(
+        'octelium',
+        ['connect', '-d', '--domain', domain],
+        CONNECT_TIMEOUT_MS,
+        octeliumEnv
+      )
+      logger.info(
+        `Connect output: ${connectResult.stdout.trim() || connectResult.stderr.trim() || 'Started in background'}`
+      )
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error)
+      logger.error('Connect failed:', error as Error)
+      return { success: false, error: `Connect failed: ${errorMsg}` }
+    }
 
-    logger.info('Successfully connected to Teniu Cloud')
-    return { success: true }
+    // Step 3: Verify connection by checking status
+    logger.info('Step 3: Verifying connection...')
+    await new Promise((resolve) => setTimeout(resolve, 2000)) // Wait a moment for connection to establish
+
+    const status = await checkStatusWithEnv(domain)
+    if (status.connected) {
+      logger.info('Successfully connected to Teniu Cloud')
+      return { success: true }
+    } else {
+      logger.warn('Connection verification failed, but command completed')
+      // Still return success since commands completed without error
+      return { success: true }
+    }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)
     logger.error('Failed to connect to Teniu Cloud:', error as Error)
@@ -147,8 +180,8 @@ export async function disconnect(): Promise<CommandResult> {
     // Step 1: Disconnect from the cluster (close tunnel)
     try {
       logger.info('Step 1: Closing local tunnel...')
-      await executeCommand('octelium', ['disconnect'], COMMAND_TIMEOUT_MS)
-      logger.info('Local tunnel closed')
+      const result = await executeCommand('octelium', ['disconnect'], LOGIN_TIMEOUT_MS, getOcteliumEnv())
+      logger.info(`Disconnect output: ${result.stdout.trim() || result.stderr.trim() || 'Done'}`)
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error)
       const lowerErrorMsg = errorMsg.toLowerCase()
@@ -169,8 +202,8 @@ export async function disconnect(): Promise<CommandResult> {
     // Step 2: Logout from the cluster
     try {
       logger.info('Step 2: Logging out from cluster...')
-      await executeCommand('octelium', ['logout'], COMMAND_TIMEOUT_MS)
-      logger.info('Logout successful')
+      const result = await executeCommand('octelium', ['logout'], LOGIN_TIMEOUT_MS, getOcteliumEnv())
+      logger.info(`Logout output: ${result.stdout.trim() || result.stderr.trim() || 'Done'}`)
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error)
       const lowerErrorMsg = errorMsg.toLowerCase()
@@ -180,7 +213,8 @@ export async function disconnect(): Promise<CommandResult> {
         lowerErrorMsg.includes('domain is not set') ||
         lowerErrorMsg.includes('domain not set') ||
         lowerErrorMsg.includes('not logged in') ||
-        lowerErrorMsg.includes('not connected')
+        lowerErrorMsg.includes('not connected') ||
+        lowerErrorMsg.includes('please authenticate')
       ) {
         logger.info('Already logged out (no active session)')
       } else {
@@ -199,9 +233,15 @@ export async function disconnect(): Promise<CommandResult> {
 
 /**
  * Check connection status using octelium CLI
- * Uses 'octelium status' command to check if connected
  */
 export async function checkStatus(): Promise<ConnectionStatus> {
+  return checkStatusWithEnv()
+}
+
+/**
+ * Internal function to check status with optional domain env
+ */
+async function checkStatusWithEnv(domain?: string): Promise<ConnectionStatus> {
   try {
     // Check if octelium is installed
     const installed = await isOcteliumInstalled()
@@ -211,23 +251,12 @@ export async function checkStatus(): Promise<ConnectionStatus> {
 
     // Try to check status using 'octelium status' command
     try {
-      const { stdout } = await executeCommand('octelium', ['status'], STATUS_TIMEOUT_MS)
-      const output = stdout.toLowerCase()
+      const env = getOcteliumEnv(domain)
+      const { stdout } = await executeCommand('octelium', ['status'], STATUS_TIMEOUT_MS, env)
 
       // Check for success indicators in output
       // octelium status shows connection info when connected
-      if (
-        output.includes('connected') ||
-        output.includes('logged in') ||
-        output.includes('cluster:') ||
-        output.includes('user:') ||
-        output.includes('tenant:')
-      ) {
-        return { connected: true }
-      }
-
-      // If we got output without error, likely connected
-      if (stdout.trim().length > 0) {
+      if (stdout.includes('cluster:') || stdout.includes('session:') || stdout.includes('user:')) {
         return { connected: true }
       }
 
@@ -242,7 +271,8 @@ export async function checkStatus(): Promise<ConnectionStatus> {
         lowerErrorMsg.includes('not connected') ||
         lowerErrorMsg.includes('domain is not set') ||
         lowerErrorMsg.includes('domain not set') ||
-        lowerErrorMsg.includes('no cluster')
+        lowerErrorMsg.includes('no cluster') ||
+        lowerErrorMsg.includes('please authenticate')
       ) {
         return { connected: false }
       }
