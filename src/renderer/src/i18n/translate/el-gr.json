@@ -475,6 +475,32 @@
       "running": "Εκτελείται",
       "stopped": "Σταματημένος"
     },
+    "systemInfo": {
+      "cpu": {
+        "brand": "[to be translated]:Model",
+        "cores": "[to be translated]:Cores",
+        "physicalCores": "[to be translated]:Physical Cores",
+        "speed": "[to be translated]:Speed",
+        "title": "[to be translated]:Processor"
+      },
+      "description": "[to be translated]:Hardware and system information of current device",
+      "disk": {
+        "title": "[to be translated]:Storage"
+      },
+      "gpu": {
+        "model": "[to be translated]:Model",
+        "notDetected": "[to be translated]:No dedicated GPU detected",
+        "title": "[to be translated]:Graphics"
+      },
+      "notAvailable": "[to be translated]:Unable to retrieve system information",
+      "os": {
+        "arch": "[to be translated]:Architecture",
+        "platform": "[to be translated]:System",
+        "title": "[to be translated]:Operating System",
+        "version": "[to be translated]:Version"
+      },
+      "title": "[to be translated]:Local System Configuration"
+    },
     "title": "Local LLM Gateway"
   },
   "appMenu": {

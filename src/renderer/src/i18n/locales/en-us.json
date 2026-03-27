@@ -475,6 +475,32 @@
       "running": "Running",
       "stopped": "Stopped"
     },
+    "systemInfo": {
+      "cpu": {
+        "brand": "Model",
+        "cores": "Cores",
+        "physicalCores": "Physical Cores",
+        "speed": "Speed",
+        "title": "Processor"
+      },
+      "description": "Hardware and system information of current device",
+      "disk": {
+        "title": "Storage"
+      },
+      "gpu": {
+        "model": "Model",
+        "notDetected": "No dedicated GPU detected",
+        "title": "Graphics"
+      },
+      "notAvailable": "Unable to retrieve system information",
+      "os": {
+        "arch": "Architecture",
+        "platform": "System",
+        "title": "Operating System",
+        "version": "Version"
+      },
+      "title": "Local System Configuration"
+    },
     "title": "Local LLM Gateway"
   },
   "appMenu": {

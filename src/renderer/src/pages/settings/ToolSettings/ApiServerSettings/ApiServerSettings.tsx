@@ -1,13 +1,16 @@
 import { useTheme } from '@renderer/context/ThemeProvider'
 import { useApiServer } from '@renderer/hooks/useApiServer'
+import { loggerService } from '@renderer/services/LoggerService'
 import type { RootState } from '@renderer/store'
 import { useAppDispatch } from '@renderer/store'
 import { setApiServerApiKey, setApiServerPort } from '@renderer/store/settings'
+import type { SystemInfoResult } from '@renderer/types'
 import { formatErrorMessage } from '@renderer/utils/error'
 import { API_SERVER_DEFAULTS } from '@shared/config/constant'
-import { Alert, Button, Input, InputNumber, Tooltip, Typography } from 'antd'
-import { Copy, ExternalLink, Play, RotateCcw, Square } from 'lucide-react'
+import { Alert, Button, Input, InputNumber, Spin, Tooltip, Typography } from 'antd'
+import { Copy, Cpu, ExternalLink, HardDrive, Monitor, Play, RotateCcw, Square } from 'lucide-react'
 import type { FC } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSelector } from 'react-redux'
 import styled from 'styled-components'
@@ -16,6 +19,8 @@ import { v4 as uuidv4 } from 'uuid'
 import { SettingContainer } from '../..'
 
 const { Text, Title } = Typography
+
+const logger = loggerService.withContext('ApiServerSettings')
 
 const ApiServerSettings: FC = () => {
   const { theme } = useTheme()
@@ -26,6 +31,26 @@ const ApiServerSettings: FC = () => {
   const apiServerConfig = useSelector((state: RootState) => state.settings.apiServer)
   const { apiServerRunning, apiServerLoading, startApiServer, stopApiServer, restartApiServer, setApiServerEnabled } =
     useApiServer()
+
+  // System info state
+  const [systemInfo, setSystemInfo] = useState<SystemInfoResult | null>(null)
+  const [systemInfoLoading, setSystemInfoLoading] = useState(true)
+
+  // Fetch system info on mount
+  useEffect(() => {
+    const fetchSystemInfo = async () => {
+      try {
+        setSystemInfoLoading(true)
+        const info = await window.api.getSystemInfo()
+        setSystemInfo(info)
+      } catch (error) {
+        logger.error('Failed to fetch system info:', error as Error)
+      } finally {
+        setSystemInfoLoading(false)
+      }
+    }
+    fetchSystemInfo()
+  }, [])
 
   const handleApiServerToggle = async (enabled: boolean) => {
     try {
@@ -186,6 +211,115 @@ const ApiServerSettings: FC = () => {
           />
         </AuthHeaderSection>
       </ConfigurationField>
+
+      {/* System Information Section */}
+      <SystemInfoSection>
+        <SystemInfoHeader>
+          <SystemInfoTitle>{t('apiServer.systemInfo.title')}</SystemInfoTitle>
+          <SystemInfoDescription>{t('apiServer.systemInfo.description')}</SystemInfoDescription>
+        </SystemInfoHeader>
+
+        {systemInfoLoading ? (
+          <LoadingContainer>
+            <Spin size="default" />
+          </LoadingContainer>
+        ) : systemInfo ? (
+          <SystemInfoGrid>
+            {/* CPU Info */}
+            <InfoCard>
+              <InfoCardHeader>
+                <Cpu size={16} />
+                <InfoCardTitle>{t('apiServer.systemInfo.cpu.title')}</InfoCardTitle>
+              </InfoCardHeader>
+              <InfoCardContent>
+                <InfoItem>
+                  <InfoLabel>{t('apiServer.systemInfo.cpu.brand')}</InfoLabel>
+                  <InfoValue>
+                    {systemInfo.cpu.manufacturer} {systemInfo.cpu.brand}
+                  </InfoValue>
+                </InfoItem>
+                <InfoItem>
+                  <InfoLabel>{t('apiServer.systemInfo.cpu.cores')}</InfoLabel>
+                  <InfoValue>
+                    {systemInfo.cpu.cores} ({t('apiServer.systemInfo.cpu.physicalCores')}:{' '}
+                    {systemInfo.cpu.physicalCores})
+                  </InfoValue>
+                </InfoItem>
+                <InfoItem>
+                  <InfoLabel>{t('apiServer.systemInfo.cpu.speed')}</InfoLabel>
+                  <InfoValue>{systemInfo.cpu.speed} GHz</InfoValue>
+                </InfoItem>
+              </InfoCardContent>
+            </InfoCard>
+
+            {/* GPU Info */}
+            <InfoCard>
+              <InfoCardHeader>
+                <Monitor size={16} />
+                <InfoCardTitle>{t('apiServer.systemInfo.gpu.title')}</InfoCardTitle>
+              </InfoCardHeader>
+              <InfoCardContent>
+                {systemInfo.gpu.length > 0 ? (
+                  systemInfo.gpu.map((gpu, index) => (
+                    <InfoItem key={index}>
+                      <InfoLabel>{t('apiServer.systemInfo.gpu.model')}</InfoLabel>
+                      <InfoValue>{gpu.model}</InfoValue>
+                      <InfoSubValue>
+                        {gpu.vendor} | {gpu.memory}
+                      </InfoSubValue>
+                    </InfoItem>
+                  ))
+                ) : (
+                  <InfoItem>
+                    <InfoValue>{t('apiServer.systemInfo.gpu.notDetected')}</InfoValue>
+                  </InfoItem>
+                )}
+              </InfoCardContent>
+            </InfoCard>
+
+            {/* Disk Info */}
+            <InfoCard>
+              <InfoCardHeader>
+                <HardDrive size={16} />
+                <InfoCardTitle>{t('apiServer.systemInfo.disk.title')}</InfoCardTitle>
+              </InfoCardHeader>
+              <InfoCardContent>
+                {systemInfo.disks.slice(0, 3).map((disk, index) => (
+                  <InfoItem key={index}>
+                    <InfoLabel>{disk.name}</InfoLabel>
+                    <InfoValue>{disk.sizeGB}</InfoValue>
+                    <InfoSubValue>{disk.type}</InfoSubValue>
+                  </InfoItem>
+                ))}
+              </InfoCardContent>
+            </InfoCard>
+
+            {/* OS Info */}
+            <InfoCard>
+              <InfoCardHeader>
+                <Monitor size={16} />
+                <InfoCardTitle>{t('apiServer.systemInfo.os.title')}</InfoCardTitle>
+              </InfoCardHeader>
+              <InfoCardContent>
+                <InfoItem>
+                  <InfoLabel>{t('apiServer.systemInfo.os.platform')}</InfoLabel>
+                  <InfoValue>{systemInfo.os.distro}</InfoValue>
+                </InfoItem>
+                <InfoItem>
+                  <InfoLabel>{t('apiServer.systemInfo.os.version')}</InfoLabel>
+                  <InfoValue>{systemInfo.os.release}</InfoValue>
+                </InfoItem>
+                <InfoItem>
+                  <InfoLabel>{t('apiServer.systemInfo.os.arch')}</InfoLabel>
+                  <InfoValue>{systemInfo.os.arch}</InfoValue>
+                </InfoItem>
+              </InfoCardContent>
+            </InfoCard>
+          </SystemInfoGrid>
+        ) : (
+          <EmptyState>{t('apiServer.systemInfo.notAvailable')}</EmptyState>
+        )}
+      </SystemInfoSection>
     </Container>
   )
 }
@@ -385,6 +519,107 @@ const AuthHeaderSection = styled.div`
   display: flex;
   flex-direction: column;
   gap: 8px;
+`
+
+// System Info Styled Components
+const SystemInfoSection = styled.div`
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: var(--color-background);
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+`
+
+const SystemInfoHeader = styled.div`
+  margin-bottom: 8px;
+`
+
+const SystemInfoTitle = styled.div`
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-1);
+  margin-bottom: 4px;
+`
+
+const SystemInfoDescription = styled.div`
+  font-size: 12px;
+  color: var(--color-text-3);
+`
+
+const LoadingContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+`
+
+const SystemInfoGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+`
+
+const InfoCard = styled.div`
+  padding: 12px;
+  background: var(--color-background-soft);
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+`
+
+const InfoCardHeader = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  color: var(--color-text-2);
+`
+
+const InfoCardTitle = styled.div`
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-1);
+`
+
+const InfoCardContent = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+`
+
+const InfoItem = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+`
+
+const InfoLabel = styled.div`
+  font-size: 11px;
+  color: var(--color-text-3);
+`
+
+const InfoValue = styled.div`
+  font-size: 12px;
+  color: var(--color-text-1);
+  word-break: break-word;
+`
+
+const InfoSubValue = styled.div`
+  font-size: 11px;
+  color: var(--color-text-3);
+`
+
+const EmptyState = styled.div`
+  text-align: center;
+  padding: 20px;
+  color: var(--color-text-3);
+  font-size: 13px;
 `
 
 export default ApiServerSettings

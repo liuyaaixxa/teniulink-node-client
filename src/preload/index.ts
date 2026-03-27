@@ -43,6 +43,7 @@ import type {
   StartApiServerStatusResult,
   StopApiServerStatusResult,
   SupportedOcrFile,
+  SystemInfoResult,
   ThemeMode,
   WebDavConfig
 } from '@types'
@@ -145,6 +146,7 @@ const api = {
   isFullScreen: (): Promise<boolean> => ipcRenderer.invoke(IpcChannel.App_IsFullScreen),
   getSystemFonts: (): Promise<string[]> => ipcRenderer.invoke(IpcChannel.App_GetSystemFonts),
   getIpCountry: (): Promise<string> => ipcRenderer.invoke(IpcChannel.App_GetIpCountry),
+  getSystemInfo: (): Promise<SystemInfoResult | null> => ipcRenderer.invoke(IpcChannel.App_GetSystemInfo),
   mockCrashRenderProcess: () => ipcRenderer.invoke(IpcChannel.APP_CrashRenderProcess),
   mac: {
     isProcessTrusted: (): Promise<boolean> => ipcRenderer.invoke(IpcChannel.App_MacIsProcessTrusted),

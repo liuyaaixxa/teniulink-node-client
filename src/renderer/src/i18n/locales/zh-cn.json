@@ -475,6 +475,32 @@
       "running": "运行中",
       "stopped": "已停止"
     },
+    "systemInfo": {
+      "cpu": {
+        "brand": "型号",
+        "cores": "核心数",
+        "physicalCores": "物理核心",
+        "speed": "主频",
+        "title": "处理器"
+      },
+      "description": "当前设备的硬件和系统信息",
+      "disk": {
+        "title": "存储"
+      },
+      "gpu": {
+        "model": "型号",
+        "notDetected": "未检测到独立显卡",
+        "title": "显卡"
+      },
+      "notAvailable": "无法获取系统信息",
+      "os": {
+        "arch": "架构",
+        "platform": "系统",
+        "title": "操作系统",
+        "version": "版本"
+      },
+      "title": "本地系统配置"
+    },
     "title": "本地智能网关"
   },
   "appMenu": {

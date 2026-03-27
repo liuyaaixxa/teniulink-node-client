@@ -475,6 +475,32 @@
       "running": "執行中",
       "stopped": "已停止"
     },
+    "systemInfo": {
+      "cpu": {
+        "brand": "型號",
+        "cores": "核心數",
+        "physicalCores": "實體核心",
+        "speed": "主頻",
+        "title": "處理器"
+      },
+      "description": "目前裝置的硬體和系統資訊",
+      "disk": {
+        "title": "儲存"
+      },
+      "gpu": {
+        "model": "型號",
+        "notDetected": "未偵測到獨立顯卡",
+        "title": "顯卡"
+      },
+      "notAvailable": "無法取得系統資訊",
+      "os": {
+        "arch": "架構",
+        "platform": "系統",
+        "title": "作業系統",
+        "version": "版本"
+      },
+      "title": "本地系統配置"
+    },
     "title": "本地智能網關"
   },
   "appMenu": {

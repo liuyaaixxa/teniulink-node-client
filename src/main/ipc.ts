@@ -974,6 +974,49 @@ export async function registerIpc(mainWindow: BrowserWindow, app: Electron.App) 
       return null
     }
   })
+
+  // System Info
+  ipcMain.handle(IpcChannel.App_GetSystemInfo, async () => {
+    try {
+      const si = await import('systeminformation')
+      const [cpu, graphics, osInfo, diskLayout] = await Promise.all([
+        si.cpu(),
+        si.graphics(),
+        si.osInfo(),
+        si.diskLayout()
+      ])
+      return {
+        cpu: {
+          manufacturer: cpu.manufacturer,
+          brand: cpu.brand,
+          cores: cpu.cores,
+          physicalCores: cpu.physicalCores,
+          speed: cpu.speed
+        },
+        gpu: graphics.controllers.map((c) => ({
+          model: c.model,
+          vendor: c.vendor,
+          memory: c.vram ? `${c.vram} MB` : 'N/A'
+        })),
+        os: {
+          platform: osInfo.platform,
+          distro: osInfo.distro,
+          release: osInfo.release,
+          arch: osInfo.arch
+        },
+        disks: diskLayout.map((d) => ({
+          name: d.name,
+          type: d.type,
+          size: d.size,
+          sizeGB: `${Math.round(d.size / 1024 / 1024 / 1024)} GB`
+        }))
+      }
+    } catch (error) {
+      logger.error('get system info error', error as Error)
+      return null
+    }
+  })
+
   // API Server
   apiServerService.registerIpcHandlers()
 
