@@ -5548,6 +5548,8 @@
     "localModels": {
       "empty": "暂无模型，请检查智能网关是否已启动",
       "modelCount": "共 {{count}} 个模型",
+      "pageInfo": "第 {{current}} / {{total}} 页",
+      "searchPlaceholder": "搜索模型名称或ID...",
       "title": "本地模型列表"
     },
     "messages": {

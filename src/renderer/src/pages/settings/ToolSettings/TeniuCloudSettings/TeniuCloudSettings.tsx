@@ -6,9 +6,9 @@ import { setTeniuCloudApiKey, setTeniuCloudApiUrl, setTeniuCloudConnectionStatus
 import type { TeniuCloudConnectionStatus } from '@renderer/types'
 import { TENIU_CLOUD_DEFAULTS } from '@renderer/types/teniuCloud'
 import { Button, Input, Modal, Spin, Typography } from 'antd'
-import { CloudOff, Link, RefreshCw, Server, Unlink } from 'lucide-react'
+import { ChevronLeft, ChevronRight, CloudOff, Link, RefreshCw, Search, Server, Unlink } from 'lucide-react'
 import type { FC } from 'react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSelector } from 'react-redux'
 import styled from 'styled-components'
@@ -35,6 +35,8 @@ interface LocalModelsState {
   error?: string
 }
 
+const PAGE_SIZE = 10
+
 const TeniuCloudSettings: FC = () => {
   const { theme } = useTheme()
   const dispatch = useAppDispatch()
@@ -54,6 +56,10 @@ const TeniuCloudSettings: FC = () => {
     isLoading: false
   })
 
+  // Search and pagination state
+  const [searchQuery, setSearchQuery] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+
   // Check connection status on mount
   useEffect(() => {
     void checkConnectionStatus()
@@ -64,6 +70,34 @@ const TeniuCloudSettings: FC = () => {
   useEffect(() => {
     void fetchLocalModels()
   }, [])
+
+  // Filter models based on search query
+  const filteredModels = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return localModels.models
+    }
+    const query = searchQuery.toLowerCase()
+    return localModels.models.filter(
+      (model) =>
+        model.name.toLowerCase().includes(query) ||
+        model.id.toLowerCase().includes(query) ||
+        model.providerName.toLowerCase().includes(query) ||
+        model.provider.toLowerCase().includes(query)
+    )
+  }, [localModels.models, searchQuery])
+
+  // Pagination
+  const totalPages = Math.ceil(filteredModels.length / PAGE_SIZE)
+  const paginatedModels = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE
+    const end = start + PAGE_SIZE
+    return filteredModels.slice(start, end)
+  }, [filteredModels, currentPage])
+
+  // Reset to page 1 when search changes
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchQuery])
 
   const checkConnectionStatus = async () => {
     try {
@@ -86,6 +120,9 @@ const TeniuCloudSettings: FC = () => {
         isLoading: false,
         error: result.success ? undefined : result.error
       })
+      // Reset pagination when models are refreshed
+      setCurrentPage(1)
+      setSearchQuery('')
     } catch (error) {
       logger.error('Failed to fetch local models:', error as Error)
       setLocalModels((prev) => ({
@@ -283,6 +320,17 @@ const TeniuCloudSettings: FC = () => {
           <ModelCount>{t('teniuCloud.localModels.modelCount', { count: localModels.total })}</ModelCount>
         </GatewayInfoRow>
 
+        {/* Search Input */}
+        <SearchRow>
+          <SearchInput
+            placeholder={t('teniuCloud.localModels.searchPlaceholder')}
+            prefix={<Search size={14} />}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            allowClear
+          />
+        </SearchRow>
+
         {/* Divider */}
         <Divider />
 
@@ -291,15 +339,51 @@ const TeniuCloudSettings: FC = () => {
           <ErrorSection>
             <ErrorText>{localModels.error}</ErrorText>
           </ErrorSection>
-        ) : localModels.models.length > 0 ? (
-          <ModelsList>
-            {localModels.models.map((model) => (
-              <ModelItem key={model.id}>
-                <ModelName>{model.name}</ModelName>
-                <ModelProvider>{model.providerName}</ModelProvider>
-              </ModelItem>
-            ))}
-          </ModelsList>
+        ) : paginatedModels.length > 0 ? (
+          <>
+            <ModelsList>
+              {paginatedModels.map((model) => (
+                <ModelItem key={model.id}>
+                  <ModelInfo>
+                    <ModelName>{model.name}</ModelName>
+                    <ModelId>{model.id}</ModelId>
+                  </ModelInfo>
+                  <ModelProvider>{model.providerName}</ModelProvider>
+                </ModelItem>
+              ))}
+            </ModelsList>
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <PaginationRow>
+                <PageInfo>{t('teniuCloud.localModels.pageInfo', { current: currentPage, total: totalPages })}</PageInfo>
+                <PaginationControls>
+                  <PageButton
+                    onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}>
+                    <ChevronLeft size={16} />
+                  </PageButton>
+                  <PageNumbers>
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      const pageNum = currentPage - Math.floor(5 / 2) + i
+                      return (
+                        <PageNumber
+                          key={pageNum}
+                          $active={pageNum === currentPage}
+                          onClick={() => setCurrentPage(pageNum)}>
+                          {pageNum}
+                        </PageNumber>
+                      )
+                    })}
+                  </PageNumbers>
+                  <PageButton
+                    onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}>
+                    <ChevronRight size={16} />
+                  </PageButton>
+                </PaginationControls>
+              </PaginationRow>
+            )}
+          </>
         ) : (
           <EmptySection>
             <EmptyText>{t('teniuCloud.localModels.empty')}</EmptyText>
@@ -585,22 +669,35 @@ const ModelCount = styled.div`
   color: var(--color-text-3);
 `
 
+const SearchRow = styled.div`
+  margin-top: 12px;
+`
+
+const SearchInput = styled(Input)`
+  width: 100%;
+  border-radius: 6px;
+`
+
 const ModelsList = styled.div`
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-height: 200px;
-  overflow-y: auto;
 `
 
 const ModelItem = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
+  padding: 10px 12px;
   background: var(--color-background-soft);
   border-radius: 6px;
   border: 1px solid var(--color-border);
+`
+
+const ModelInfo = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 `
 
 const ModelName = styled.div`
@@ -609,8 +706,17 @@ const ModelName = styled.div`
   color: var(--color-text-1);
 `
 
+const ModelId = styled.div`
+  font-size: 11px;
+  color: var(--color-text-3);
+  font-family: monospace;
+`
+
 const ModelProvider = styled.div`
   font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: var(--color-background);
   color: var(--color-text-3);
 `
 
@@ -632,6 +738,67 @@ const EmptySection = styled.div`
 const EmptyText = styled.div`
   font-size: 13px;
   color: var(--color-text-3);
+`
+
+// Pagination Styles
+const PaginationRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border);
+`
+
+const PageInfo = styled.div`
+  font-size: 12px;
+  color: var(--color-text-3);
+`
+
+const PaginationControls = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`
+
+const PageButton = styled.div<{ disabled?: boolean }>`
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  background: var(--color-background-soft);
+  border: 1px solid var(--color-border);
+  cursor: ${(props) => (props.disabled ? 'not-allowed' : 'pointer')};
+  color: var(--color-text-2);
+  transition: all 0.2s;
+  opacity: ${(props) => (props.disabled ? 0.5 : 1)};
+
+  &:hover {
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+  }
+`
+
+const PageNumbers = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 4px;
+`
+
+const PageNumber = styled.div<{ $active: boolean }>`
+  min-width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  background: ${(props) => (props.$active ? 'var(--color-primary)' : 'var(--color-background-soft)')};
+  color: ${(props) => (props.$active ? '#fff' : 'var(--color-text-2)')};
+  border: 1px solid ${(props) => (props.$active ? 'var(--color-primary)' : 'var(--color-border)')};
 `
 
 export default TeniuCloudSettings

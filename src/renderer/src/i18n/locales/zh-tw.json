@@ -5548,6 +5548,8 @@
     "localModels": {
       "empty": "[to be translated]:No models found. Please check if the Local LLM Gateway is running.",
       "modelCount": "[to be translated]:{{count}} models",
+      "pageInfo": "[to be translated]:Page {{current}} of {{total}}",
+      "searchPlaceholder": "[to be translated]:Search models by name or ID...",
       "title": "[to be translated]:Local Models"
     },
     "messages": {
