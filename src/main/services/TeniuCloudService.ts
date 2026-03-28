@@ -347,8 +347,12 @@ export async function getLocalModels(): Promise<LocalModelsResult> {
 
     const data = await response.json()
 
+    // Validate response structure - expect { object: "list", data: [...], total: number }
+    const modelList = Array.isArray(data?.data) ? data.data : []
+    const total = typeof data?.total === 'number' ? data.total : modelList.length
+
     // Transform the response to our LocalModel format
-    const models: LocalModel[] = (data.data || []).map((model: any) => ({
+    const models: LocalModel[] = modelList.map((model: any) => ({
       id: model.id || '',
       name: model.name || model.id || '',
       provider: model.provider || 'unknown',
@@ -362,7 +366,7 @@ export async function getLocalModels(): Promise<LocalModelsResult> {
     return {
       success: true,
       models,
-      total: data.total || models.length,
+      total,
       gatewayUrl
     }
   } catch (error) {
