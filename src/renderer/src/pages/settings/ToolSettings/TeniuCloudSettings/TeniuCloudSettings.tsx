@@ -363,17 +363,29 @@ const TeniuCloudSettings: FC = () => {
                     <ChevronLeft size={16} />
                   </PageButton>
                   <PageNumbers>
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                      const pageNum = currentPage - Math.floor(5 / 2) + i
-                      return (
-                        <PageNumber
-                          key={pageNum}
-                          $active={pageNum === currentPage}
-                          onClick={() => setCurrentPage(pageNum)}>
-                          {pageNum}
-                        </PageNumber>
-                      )
-                    })}
+                    {(() => {
+                      // Calculate the range of page numbers to display
+                      const maxVisible = 5
+                      let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2))
+                      const endPage = Math.min(totalPages, startPage + maxVisible - 1)
+
+                      // Adjust start if we're near the end
+                      if (endPage - startPage + 1 < maxVisible) {
+                        startPage = Math.max(1, endPage - maxVisible + 1)
+                      }
+
+                      return Array.from({ length: endPage - startPage + 1 }, (_, i) => {
+                        const pageNum = startPage + i
+                        return (
+                          <PageNumber
+                            key={pageNum}
+                            $active={pageNum === currentPage}
+                            onClick={() => setCurrentPage(pageNum)}>
+                            {pageNum}
+                          </PageNumber>
+                        )
+                      })
+                    })()}
                   </PageNumbers>
                   <PageButton
                     onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
