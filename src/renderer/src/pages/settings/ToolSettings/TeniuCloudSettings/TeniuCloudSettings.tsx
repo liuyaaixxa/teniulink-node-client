@@ -6,7 +6,7 @@ import { setTeniuCloudApiKey, setTeniuCloudApiUrl, setTeniuCloudConnectionStatus
 import type { TeniuCloudConnectionStatus } from '@renderer/types'
 import { TENIU_CLOUD_DEFAULTS } from '@renderer/types/teniuCloud'
 import { Button, Input, Modal, Spin, Typography } from 'antd'
-import { CloudOff, Link, Unlink } from 'lucide-react'
+import { CloudOff, Link, RefreshCw, Server, Unlink } from 'lucide-react'
 import type { FC } from 'react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -17,6 +17,23 @@ import { SettingContainer } from '../..'
 
 const { Text, Title } = Typography
 const logger = loggerService.withContext('TeniuCloudSettings')
+
+interface LocalModel {
+  id: string
+  name: string
+  provider: string
+  providerName: string
+  providerType: string
+  providerModelId: string
+}
+
+interface LocalModelsState {
+  models: LocalModel[]
+  total: number
+  gatewayUrl: string
+  isLoading: boolean
+  error?: string
+}
 
 const TeniuCloudSettings: FC = () => {
   const { theme } = useTheme()
@@ -30,11 +47,22 @@ const TeniuCloudSettings: FC = () => {
   }
 
   const [isLoading, setIsLoading] = useState(false)
+  const [localModels, setLocalModels] = useState<LocalModelsState>({
+    models: [],
+    total: 0,
+    gatewayUrl: '',
+    isLoading: false
+  })
 
   // Check connection status on mount
   useEffect(() => {
     void checkConnectionStatus()
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Fetch local models on mount
+  useEffect(() => {
+    void fetchLocalModels()
   }, [])
 
   const checkConnectionStatus = async () => {
@@ -44,6 +72,27 @@ const TeniuCloudSettings: FC = () => {
     } catch (error) {
       logger.error('Failed to check connection status:', error as Error)
       dispatch(setTeniuCloudConnectionStatus('disconnected'))
+    }
+  }
+
+  const fetchLocalModels = async () => {
+    setLocalModels((prev) => ({ ...prev, isLoading: true, error: undefined }))
+    try {
+      const result = await window.api.teniuCloudGetLocalModels()
+      setLocalModels({
+        models: result.models,
+        total: result.total,
+        gatewayUrl: result.gatewayUrl,
+        isLoading: false,
+        error: result.success ? undefined : result.error
+      })
+    } catch (error) {
+      logger.error('Failed to fetch local models:', error as Error)
+      setLocalModels((prev) => ({
+        ...prev,
+        isLoading: false,
+        error: (error as Error).message
+      }))
     }
   }
 
@@ -212,6 +261,51 @@ const TeniuCloudSettings: FC = () => {
           <InfoDescription>{t('teniuCloud.info.description')}</InfoDescription>
         </InfoSection>
       </MainCard>
+
+      {/* Local Models Card */}
+      <LocalModelsCard>
+        {/* Header Row */}
+        <LocalModelsHeader>
+          <LocalModelsHeaderLeft>
+            <ServerIcon>
+              <Server size={18} />
+            </ServerIcon>
+            <LocalModelsTitle>{t('teniuCloud.localModels.title')}</LocalModelsTitle>
+          </LocalModelsHeaderLeft>
+          <RefreshButton onClick={() => void fetchLocalModels()} disabled={localModels.isLoading}>
+            {localModels.isLoading ? <Spin size="small" /> : <RefreshCw size={14} />}
+          </RefreshButton>
+        </LocalModelsHeader>
+
+        {/* Gateway Info Row */}
+        <GatewayInfoRow>
+          <GatewayUrl>{localModels.gatewayUrl || 'http://localhost:23333'}</GatewayUrl>
+          <ModelCount>{t('teniuCloud.localModels.modelCount', { count: localModels.total })}</ModelCount>
+        </GatewayInfoRow>
+
+        {/* Divider */}
+        <Divider />
+
+        {/* Models List */}
+        {localModels.error ? (
+          <ErrorSection>
+            <ErrorText>{localModels.error}</ErrorText>
+          </ErrorSection>
+        ) : localModels.models.length > 0 ? (
+          <ModelsList>
+            {localModels.models.map((model) => (
+              <ModelItem key={model.id}>
+                <ModelName>{model.name}</ModelName>
+                <ModelProvider>{model.providerName}</ModelProvider>
+              </ModelItem>
+            ))}
+          </ModelsList>
+        ) : (
+          <EmptySection>
+            <EmptyText>{t('teniuCloud.localModels.empty')}</EmptyText>
+          </EmptySection>
+        )}
+      </LocalModelsCard>
     </Container>
   )
 }
@@ -412,6 +506,132 @@ const InfoDescription = styled.div`
   font-size: 12px;
   color: var(--color-text-3);
   line-height: 1.5;
+`
+
+// Local Models Card Styles
+const LocalModelsCard = styled.div`
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  background: var(--color-background);
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+`
+
+const LocalModelsHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+`
+
+const LocalModelsHeaderLeft = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+`
+
+const ServerIcon = styled.div`
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--color-background-soft);
+  color: var(--color-text-2);
+`
+
+const LocalModelsTitle = styled.div`
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-1);
+`
+
+const RefreshButton = styled.div<{ disabled?: boolean }>`
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: var(--color-background-soft);
+  border: 1px solid var(--color-border);
+  cursor: ${(props) => (props.disabled ? 'not-allowed' : 'pointer')};
+  color: var(--color-text-2);
+  transition: all 0.2s;
+  opacity: ${(props) => (props.disabled ? 0.6 : 1)};
+
+  &:hover {
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+  }
+`
+
+const GatewayInfoRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+`
+
+const GatewayUrl = styled.div`
+  font-size: 12px;
+  color: var(--color-text-3);
+  font-family: monospace;
+`
+
+const ModelCount = styled.div`
+  font-size: 12px;
+  color: var(--color-text-3);
+`
+
+const ModelsList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+`
+
+const ModelItem = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--color-background-soft);
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+`
+
+const ModelName = styled.div`
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-1);
+`
+
+const ModelProvider = styled.div`
+  font-size: 12px;
+  color: var(--color-text-3);
+`
+
+const ErrorSection = styled.div`
+  padding: 16px;
+  text-align: center;
+`
+
+const ErrorText = styled.div`
+  font-size: 13px;
+  color: var(--color-status-error);
+`
+
+const EmptySection = styled.div`
+  padding: 16px;
+  text-align: center;
+`
+
+const EmptyText = styled.div`
+  font-size: 13px;
+  color: var(--color-text-3);
 `
 
 export default TeniuCloudSettings

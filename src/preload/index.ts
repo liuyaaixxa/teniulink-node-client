@@ -155,6 +155,20 @@ const api = {
     ipcRenderer.invoke(IpcChannel.TeniuCloud_Disconnect),
   teniuCloudCheckStatus: (): Promise<{ connected: boolean; error?: string }> =>
     ipcRenderer.invoke(IpcChannel.TeniuCloud_CheckStatus),
+  teniuCloudGetLocalModels: (): Promise<{
+    success: boolean
+    models: Array<{
+      id: string
+      name: string
+      provider: string
+      providerName: string
+      providerType: string
+      providerModelId: string
+    }>
+    total: number
+    gatewayUrl: string
+    error?: string
+  }> => ipcRenderer.invoke(IpcChannel.TeniuCloud_GetLocalModels),
   mac: {
     isProcessTrusted: (): Promise<boolean> => ipcRenderer.invoke(IpcChannel.App_MacIsProcessTrusted),
     requestProcessTrust: (): Promise<boolean> => ipcRenderer.invoke(IpcChannel.App_MacRequestProcessTrust)

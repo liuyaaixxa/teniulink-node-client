@@ -1,6 +1,7 @@
 import { execFile } from 'node:child_process'
 
 import { loggerService } from '@logger'
+import { API_SERVER_DEFAULTS } from '@shared/config/constant'
 
 const logger = loggerService.withContext('TeniuCloudService')
 
@@ -16,6 +17,23 @@ interface CommandResult {
 
 interface ConnectionStatus {
   connected: boolean
+  error?: string
+}
+
+export interface LocalModel {
+  id: string
+  name: string
+  provider: string
+  providerName: string
+  providerType: string
+  providerModelId: string
+}
+
+export interface LocalModelsResult {
+  success: boolean
+  models: LocalModel[]
+  total: number
+  gatewayUrl: string
   error?: string
 }
 
@@ -288,10 +306,83 @@ async function checkStatusWithEnv(domain?: string): Promise<ConnectionStatus> {
   }
 }
 
+/**
+ * Get local models from the local API server (智能网关)
+ * Fetches models from http://localhost:{port}/v1/models
+ */
+export async function getLocalModels(): Promise<LocalModelsResult> {
+  try {
+    // Dynamically import config to avoid circular dependency
+    const { config } = await import('../apiServer/config.js')
+
+    const apiConfig = await config.get()
+    const host = apiConfig.host || API_SERVER_DEFAULTS.HOST
+    const port = apiConfig.port || API_SERVER_DEFAULTS.PORT
+    const apiKey = apiConfig.apiKey
+
+    const gatewayUrl = `http://${host}:${port}`
+    const modelsUrl = `${gatewayUrl}/v1/models`
+
+    logger.debug(`Fetching local models from ${modelsUrl}`)
+
+    const response = await fetch(modelsUrl, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      }
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      logger.error(`Failed to fetch models: ${response.status} ${errorText}`)
+      return {
+        success: false,
+        models: [],
+        total: 0,
+        gatewayUrl,
+        error: `HTTP ${response.status}: ${errorText}`
+      }
+    }
+
+    const data = await response.json()
+
+    // Transform the response to our LocalModel format
+    const models: LocalModel[] = (data.data || []).map((model: any) => ({
+      id: model.id || '',
+      name: model.name || model.id || '',
+      provider: model.provider || 'unknown',
+      providerName: model.provider_name || model.provider || 'Unknown',
+      providerType: model.provider_type || model.provider || 'unknown',
+      providerModelId: model.provider_model_id || model.id || ''
+    }))
+
+    logger.info(`Fetched ${models.length} local models from gateway`)
+
+    return {
+      success: true,
+      models,
+      total: data.total || models.length,
+      gatewayUrl
+    }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    logger.error('Failed to get local models:', error as Error)
+    return {
+      success: false,
+      models: [],
+      total: 0,
+      gatewayUrl: `http://${API_SERVER_DEFAULTS.HOST}:${API_SERVER_DEFAULTS.PORT}`,
+      error: errorMessage
+    }
+  }
+}
+
 export const teniuCloudService = {
   connect,
   disconnect,
-  checkStatus
+  checkStatus,
+  getLocalModels
 }
 
 export default teniuCloudService

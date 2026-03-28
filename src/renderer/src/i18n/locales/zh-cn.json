@@ -5545,6 +5545,11 @@
       "description": "Teniu云 提供安全的 AI 服务远程访问。配置您的 API 地址和密钥，然后点击连接以建立连接。",
       "title": "关于 Teniu云 连接"
     },
+    "localModels": {
+      "empty": "暂无模型，请检查智能网关是否已启动",
+      "modelCount": "共 {{count}} 个模型",
+      "title": "本地模型列表"
+    },
     "messages": {
       "configRequired": "请先配置 API 地址和访问秘钥",
       "connectFailed": "连接 Teniu云 失败",

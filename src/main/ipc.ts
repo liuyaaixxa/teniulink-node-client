@@ -1220,4 +1220,5 @@ export async function registerIpc(mainWindow: BrowserWindow, app: Electron.App) 
   )
   ipcMain.handle(IpcChannel.TeniuCloud_Disconnect, () => teniuCloudService.disconnect())
   ipcMain.handle(IpcChannel.TeniuCloud_CheckStatus, () => teniuCloudService.checkStatus())
+  ipcMain.handle(IpcChannel.TeniuCloud_GetLocalModels, () => teniuCloudService.getLocalModels())
 }

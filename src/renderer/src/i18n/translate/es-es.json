@@ -5545,6 +5545,11 @@
       "description": "[to be translated]:Teniu Cloud provides secure remote access to AI services. Configure your API URL and key, then click Connect to establish a connection.",
       "title": "[to be translated]:About Teniu Cloud Connection"
     },
+    "localModels": {
+      "empty": "[to be translated]:No models found. Please check if the Local LLM Gateway is running.",
+      "modelCount": "[to be translated]:{{count}} models",
+      "title": "[to be translated]:Local Models"
+    },
     "messages": {
       "configRequired": "[to be translated]:Please configure API URL and API Key first",
       "connectFailed": "[to be translated]:Failed to connect to Teniu Cloud",

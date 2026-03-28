@@ -57,6 +57,7 @@ export enum IpcChannel {
   TeniuCloud_Connect = 'teniu-cloud:connect',
   TeniuCloud_Disconnect = 'teniu-cloud:disconnect',
   TeniuCloud_CheckStatus = 'teniu-cloud:check-status',
+  TeniuCloud_GetLocalModels = 'teniu-cloud:get-local-models',
 
   Notification_Send = 'notification:send',
   Notification_OnClick = 'notification:on-click',
