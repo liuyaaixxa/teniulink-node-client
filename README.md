@@ -1,6 +1,6 @@
 <div align="center">
   <a href="https://github.com/teniu-projects/teniulink-node-client">
-    <img src="https://github.com/CherryHQ/cherry-studio/blob/main/build/icon.png?raw=true" width="120" height="120" alt="Teniulink Node" />
+    <img src="./resources/logos/tu-option6-green.svg" width="120" height="120" alt="Teniulink Node" />
   </a>
   <h1>Teniulink Node</h1>
   <p><strong>跨平台 AI 助手桌面客户端</strong></p>
