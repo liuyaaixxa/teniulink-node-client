@@ -31,7 +31,7 @@ vi.mock('@renderer/store/settings', () => ({
   setAuthLogout: vi.fn()
 }))
 
-vi.mock('@renderer/assets/images/teniulink-text-logo.svg', () => ({
+vi.mock('@renderer/assets/images/teniulink-logo.svg', () => ({
   default: 'test-logo.svg'
 }))
 
@@ -42,7 +42,7 @@ describe('LoginPage', () => {
 
     expect(screen.getByPlaceholderText('Username')).toBeInTheDocument()
     expect(screen.getByPlaceholderText('Password')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /login/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /connect node/i })).toBeInTheDocument()
   })
 
   it('should render Teniulink logo', async () => {

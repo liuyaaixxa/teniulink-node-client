@@ -1,4 +1,4 @@
-import TeniulinkLogo from '@renderer/assets/images/teniulink-text-logo.svg'
+import TeniulinkLogo from '@renderer/assets/images/teniulink-logo.svg'
 import { useAppDispatch } from '@renderer/store'
 import { setAuthLogin } from '@renderer/store/settings'
 import { Button, Form, Input, message } from 'antd'
@@ -44,45 +44,47 @@ const LoginPage: FC = () => {
 
   return (
     <PageContainer>
-      <GridOverlay />
-      <ParticleLayer>
-        {Array.from({ length: 20 }, (_, i) => (
-          <Particle key={i} $delay={i * 0.5} $x={Math.random() * 100} $size={2 + Math.random() * 3} />
-        ))}
-      </ParticleLayer>
-      <LoginCard>
-        <LogoContainer>
+      <GlowBg />
+      <ContentWrapper>
+        <LogoSection>
           <Logo src={TeniulinkLogo} alt="Teniulink Node" draggable={false} />
+          <BrandName>
+            Teniu<BrandHighlight>link</BrandHighlight>
+          </BrandName>
           <Subtitle>Intelligent Gateway Node</Subtitle>
-        </LogoContainer>
-        <StyledForm form={form} onFinish={handleLogin} layout="vertical" size="large">
-          <Form.Item name="username" rules={[{ required: true, message: 'Please enter username' }]}>
-            <Input prefix={<User size={16} style={{ opacity: 0.5 }} />} placeholder="Username" autoFocus />
-          </Form.Item>
-          <Form.Item name="password" rules={[{ required: true, message: 'Please enter password' }]}>
-            <Input.Password prefix={<Lock size={16} style={{ opacity: 0.5 }} />} placeholder="Password" />
-          </Form.Item>
-          <Form.Item style={{ marginBottom: 0 }}>
-            <LoginButton type="primary" htmlType="submit" loading={loading} block>
-              Login
-            </LoginButton>
-          </Form.Item>
-        </StyledForm>
-      </LoginCard>
+        </LogoSection>
+        <FormSection>
+          <StyledForm form={form} onFinish={handleLogin} layout="vertical" size="middle">
+            <Form.Item name="username" rules={[{ required: true, message: 'Please enter username' }]}>
+              <StyledInput prefix={<User size={14} color="#64748b" />} placeholder="Username" autoFocus />
+            </Form.Item>
+            <Form.Item name="password" rules={[{ required: true, message: 'Please enter password' }]}>
+              <StyledPasswordInput prefix={<Lock size={14} color="#64748b" />} placeholder="Password" />
+            </Form.Item>
+            <Form.Item style={{ marginBottom: 0, marginTop: 4 }}>
+              <LoginButton type="primary" htmlType="submit" loading={loading} block>
+                Connect Node
+              </LoginButton>
+            </Form.Item>
+          </StyledForm>
+        </FormSection>
+        <StatusBadge>
+          <StatusDot />
+          <span>Teniu Cloud Network</span>
+        </StatusBadge>
+      </ContentWrapper>
     </PageContainer>
   )
 }
 
-const float = keyframes`
-  0%, 100% { transform: translateY(0); opacity: 0; }
-  10% { opacity: 1; }
-  90% { opacity: 1; }
-  100% { transform: translateY(-100vh); opacity: 0; }
+const glowPulse = keyframes`
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
 `
 
-const gridPulse = keyframes`
-  0%, 100% { opacity: 0.03; }
-  50% { opacity: 0.08; }
+const dotPulse = keyframes`
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
 `
 
 const PageContainer = styled.div`
@@ -91,107 +93,153 @@ const PageContainer = styled.div`
   justify-content: center;
   width: 100vw;
   height: 100vh;
-  background: linear-gradient(135deg, #0a0e1a 0%, #0d1526 30%, #0f1b35 60%, #0a1628 100%);
+  background: #050508;
   position: relative;
   overflow: hidden;
   -webkit-app-region: drag;
 `
 
-const GridOverlay = styled.div`
+const GlowBg = styled.div`
   position: absolute;
   inset: 0;
-  background-image: linear-gradient(rgba(0, 212, 255, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 212, 255, 0.05) 1px, transparent 1px);
-  background-size: 60px 60px;
-  animation: ${gridPulse} 4s ease-in-out infinite;
-`
-
-const ParticleLayer = styled.div`
-  position: absolute;
-  inset: 0;
+  background: radial-gradient(ellipse at 30% 20%, rgba(0, 255, 136, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 80%, rgba(0, 168, 255, 0.06) 0%, transparent 50%);
+  animation: ${glowPulse} 6s ease-in-out infinite;
   pointer-events: none;
 `
 
-const Particle = styled.div<{ $delay: number; $x: number; $size: number }>`
-  position: absolute;
-  bottom: -10px;
-  left: ${({ $x }) => $x}%;
-  width: ${({ $size }) => $size}px;
-  height: ${({ $size }) => $size}px;
-  background: radial-gradient(circle, rgba(0, 212, 255, 0.8), transparent);
-  border-radius: 50%;
-  animation: ${float} ${() => 8 + Math.random() * 6}s linear infinite;
-  animation-delay: ${({ $delay }) => $delay}s;
-`
-
-const LoginCard = styled.div`
+const ContentWrapper = styled.div`
   position: relative;
   z-index: 1;
-  width: 380px;
-  padding: 40px 36px;
-  background: rgba(255, 255, 255, 0.04);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 16px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4), 0 0 40px rgba(0, 212, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 300px;
   -webkit-app-region: none;
 `
 
-const LogoContainer = styled.div`
+const LogoSection = styled.div`
   text-align: center;
-  margin-bottom: 32px;
+  margin-bottom: 24px;
 `
 
 const Logo = styled.img`
-  height: 36px;
-  margin-bottom: 8px;
-  filter: brightness(1.2);
+  width: 56px;
+  height: 56px;
+  margin-bottom: 10px;
+`
+
+const BrandName = styled.div`
+  font-size: 20px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.5px;
+`
+
+const BrandHighlight = styled.span`
+  background: linear-gradient(135deg, #00ff88, #00a8ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 `
 
 const Subtitle = styled.div`
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.35);
-  letter-spacing: 3px;
+  font-size: 11px;
+  color: #64748b;
+  letter-spacing: 2px;
   text-transform: uppercase;
+  margin-top: 4px;
+`
+
+const FormSection = styled.div`
+  width: 100%;
 `
 
 const StyledForm = styled(Form<LoginFormValues>)`
-  .ant-input-affix-wrapper,
-  .ant-input {
-    background: rgba(255, 255, 255, 0.06) !important;
-    border-color: rgba(255, 255, 255, 0.1) !important;
-    color: rgba(255, 255, 255, 0.9) !important;
-    border-radius: 8px;
-    &:hover,
-    &:focus,
-    &.ant-input-affix-wrapper-focused {
-      border-color: rgba(0, 212, 255, 0.5) !important;
-      box-shadow: 0 0 12px rgba(0, 212, 255, 0.15) !important;
-    }
-    &::placeholder {
-      color: rgba(255, 255, 255, 0.3) !important;
-    }
-  }
-  .ant-input-password-icon {
-    color: rgba(255, 255, 255, 0.4) !important;
+  .ant-form-item {
+    margin-bottom: 12px;
   }
   .ant-form-item-explain-error {
-    font-size: 12px;
+    font-size: 11px;
+  }
+`
+
+const inputStyles = `
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 10px !important;
+  color: #ffffff !important;
+  height: 38px;
+  &:hover,
+  &:focus,
+  &.ant-input-affix-wrapper-focused {
+    border-color: rgba(0, 255, 136, 0.4) !important;
+    box-shadow: 0 0 0 2px rgba(0, 255, 136, 0.08) !important;
+  }
+  &::placeholder {
+    color: #475569 !important;
+  }
+  .ant-input {
+    background: transparent !important;
+    color: #ffffff !important;
+    &::placeholder {
+      color: #475569 !important;
+    }
+  }
+`
+
+const StyledInput = styled(Input)`
+  ${inputStyles}
+`
+
+const StyledPasswordInput = styled(Input.Password)`
+  ${inputStyles}
+  .ant-input-password-icon {
+    color: #475569 !important;
+    &:hover {
+      color: #94a3b8 !important;
+    }
   }
 `
 
 const LoginButton = styled(Button)`
-  height: 44px;
-  border-radius: 8px;
+  height: 38px;
+  border-radius: 10px;
   font-weight: 600;
-  font-size: 15px;
-  background: linear-gradient(135deg, #00d4ff, #0099cc) !important;
+  font-size: 13px;
+  background: linear-gradient(135deg, #00ff88, #00a8ff) !important;
   border: none !important;
-  box-shadow: 0 4px 20px rgba(0, 212, 255, 0.3);
+  color: #050508 !important;
+  box-shadow: 0 4px 20px rgba(0, 255, 136, 0.2);
+  transition: all 0.3s;
   &:hover {
-    background: linear-gradient(135deg, #33ddff, #00aadd) !important;
-    box-shadow: 0 6px 25px rgba(0, 212, 255, 0.4);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 28px rgba(0, 255, 136, 0.35) !important;
   }
+  &:active {
+    transform: translateY(0);
+  }
+`
+
+const StatusBadge = styled.div`
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 20px;
+  padding: 4px 12px;
+  background: rgba(0, 255, 136, 0.06);
+  border: 1px solid rgba(0, 255, 136, 0.15);
+  border-radius: 20px;
+  font-size: 11px;
+  color: #64748b;
+`
+
+const StatusDot = styled.div`
+  width: 6px;
+  height: 6px;
+  background: #00ff88;
+  border-radius: 50%;
+  animation: ${dotPulse} 2s infinite;
 `
 
 export default LoginPage
