@@ -3397,7 +3397,8 @@ const migrateConfig = {
         state.settings.teniuCloud = {
           apiUrl: 'https://teniuapi.cloud',
           apiKey: '',
-          connectionStatus: 'disconnected'
+          connectionStatus: 'disconnected',
+          serviceName: ''
         }
       }
       logger.info('migrate 206 success')

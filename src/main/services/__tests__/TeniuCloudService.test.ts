@@ -2,8 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock child_process
 const mockExecFile = vi.fn()
+const mockSpawn = vi.fn()
 vi.mock('node:child_process', () => ({
-  execFile: (...args: any[]) => mockExecFile(...args)
+  execFile: (...args: any[]) => mockExecFile(...args),
+  spawn: (...args: any[]) => mockSpawn(...args)
 }))
 
 vi.mock('@logger', () => ({
@@ -170,12 +172,32 @@ describe('TeniuCloudService', () => {
     })
   })
 
-  describe('connect (one-step flow)', () => {
-    it('should execute one-step connect with auth-token when octelium is installed', async () => {
-      // which octelium → found, connect → success, which octelium → found, octelium status → connected
+  describe('connect (background spawn flow)', () => {
+    // Helper to mock spawn returning a child process that starts successfully
+    function mockSpawnSuccess() {
+      mockSpawn.mockReturnValue({
+        on: vi.fn(),
+        unref: vi.fn()
+      })
+    }
+
+    // Helper to mock spawn returning a child process that emits an error
+    function mockSpawnError(message: string) {
+      mockSpawn.mockReturnValue({
+        on: vi.fn((event: string, cb: (err: Error) => void) => {
+          if (event === 'error') {
+            setTimeout(() => cb(new Error(message)), 10)
+          }
+        }),
+        unref: vi.fn()
+      })
+    }
+
+    it('should spawn background connect and verify via status polling', async () => {
+      mockSpawnSuccess()
+      // which octelium → found, then status polling: which → found, status → connected
       mockExecFileSequence([
         { stdout: '/usr/local/bin/octelium' },
-        { stdout: 'Connected' },
         { stdout: '/usr/local/bin/octelium' },
         { stdout: 'cluster: teniuapi.cloud\nsession: abc\nuser: admin' }
       ])
@@ -183,23 +205,63 @@ describe('TeniuCloudService', () => {
       const result = await connect('https://teniuapi.cloud', 'test-auth-token')
       expect(result.success).toBe(true)
 
-      // Verify the connect command args include --auth-token
-      const connectCall = mockExecFile.mock.calls.find(
-        (call: any[]) => call[0] === 'octelium' && call[1]?.includes('connect')
+      // Verify spawn was called with correct args (no -d flag)
+      expect(mockSpawn).toHaveBeenCalledWith(
+        'octelium',
+        ['connect', '--domain', 'teniuapi.cloud', '--auth-token', 'test-auth-token'],
+        expect.objectContaining({ detached: true, stdio: 'ignore' })
       )
-      expect(connectCall).toBeDefined()
-      expect(connectCall![1]).toContain('--auth-token')
-      expect(connectCall![1]).toContain('test-auth-token')
-      expect(connectCall![1]).toContain('-d')
     })
 
-    it('should return error when connect command fails', async () => {
-      // which → found, connect → fail
-      mockExecFileSequence([{ stdout: '/usr/local/bin/octelium' }, { error: 'connection refused' }])
+    it('should return error when spawn itself fails', async () => {
+      mockSpawnError('ENOENT')
+      // which octelium → found
+      mockExecFileSequence([{ stdout: '/usr/local/bin/octelium' }])
 
       const result = await connect('https://teniuapi.cloud', 'test-auth-token')
       expect(result.success).toBe(false)
       expect(result.error).toContain('Connect failed')
+    })
+
+    it('should succeed when status confirms connection on a later poll attempt', async () => {
+      mockSpawnSuccess()
+      // which octelium → found, then first status poll fails, second succeeds
+      let execCallIndex = 0
+      mockExecFile.mockImplementation(
+        (
+          _cmd: string,
+          _args: string[],
+          _opts: unknown,
+          cb: (err: Error | null, stdout: string, stderr: string) => void
+        ) => {
+          execCallIndex++
+          // 1st call: which octelium → found
+          if (execCallIndex === 1) {
+            cb(null, '/usr/local/bin/octelium', '')
+            return
+          }
+          // 2nd call: first status poll - which → found
+          if (execCallIndex === 2) {
+            cb(null, '/usr/local/bin/octelium', '')
+            return
+          }
+          // 3rd call: first status check → not connected yet
+          if (execCallIndex === 3) {
+            cb(new Error('not connected'), '', 'not connected')
+            return
+          }
+          // 4th call: second status poll - which → found
+          if (execCallIndex === 4) {
+            cb(null, '/usr/local/bin/octelium', '')
+            return
+          }
+          // 5th call: second status check → connected
+          cb(null, 'cluster: teniuapi.cloud\nsession: abc\nuser: admin', '')
+        }
+      )
+
+      const result = await connect('https://teniuapi.cloud', 'test-auth-token')
+      expect(result.success).toBe(true)
     })
   })
 

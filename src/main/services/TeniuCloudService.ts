@@ -1,4 +1,4 @@
-import { execFile } from 'node:child_process'
+import { execFile, spawn } from 'node:child_process'
 
 import { loggerService } from '@logger'
 import { API_SERVER_DEFAULTS } from '@shared/config/constant'
@@ -12,7 +12,6 @@ const DEFAULT_API_BASE = __TENIU_CLOUD_API_BASE__
 
 // Timeout for CLI commands
 const COMMAND_TIMEOUT_MS = 30000
-const CONNECT_TIMEOUT_MS = 60000
 const STATUS_TIMEOUT_MS = 10000
 const INSTALL_TIMEOUT_MS = 300000 // 5 minutes for brew install
 
@@ -199,8 +198,43 @@ export async function installOctelium(): Promise<CommandResult> {
 }
 
 /**
- * Connect to Teniu Cloud using one-step octelium connect command
- * Uses: octelium connect -d --domain {domain} --auth-token {apiKey}
+ * Spawn octelium connect as a background process (no -d flag, no admin password).
+ * The process is detached and unref'd so it keeps running after Electron exits.
+ */
+function spawnConnectBackground(domain: string, apiKey: string, env: NodeJS.ProcessEnv): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const args = ['connect', '--domain', domain, '--auth-token', apiKey]
+    const mergedEnv = { ...process.env, ...env }
+
+    logger.debug(`Spawning background: octelium ${args.join(' ')}`)
+
+    const child = spawn('octelium', args, {
+      env: mergedEnv,
+      detached: true,
+      stdio: 'ignore'
+    })
+
+    child.on('error', (err) => {
+      logger.error('Failed to spawn octelium connect:', err)
+      reject(new Error(`Failed to start octelium: ${err.message}`))
+    })
+
+    // Detach from parent so it survives independently
+    child.unref()
+
+    // Give the process a moment to start (or fail immediately)
+    setTimeout(() => resolve(), 500)
+  })
+}
+
+// How many times to poll status and how long between polls
+const STATUS_POLL_INTERVAL_MS = 1500
+const STATUS_POLL_MAX_ATTEMPTS = 10
+
+/**
+ * Connect to Teniu Cloud using background octelium connect command.
+ * Uses: octelium connect --domain {domain} --auth-token {apiKey} (background)
+ * Then polls `octelium status` to verify the connection is established.
  */
 export async function connect(apiUrl: string, apiKey: string): Promise<CommandResult> {
   try {
@@ -224,32 +258,30 @@ export async function connect(apiUrl: string, apiKey: string): Promise<CommandRe
 
     const octeliumEnv = getOcteliumEnv(domain)
 
-    // One-step connect with auth-token
+    // Spawn connect as a background process (no -d flag, no admin password)
     try {
-      const connectResult = await executeCommand(
-        'octelium',
-        ['connect', '-d', '--domain', domain, '--auth-token', apiKey],
-        CONNECT_TIMEOUT_MS,
-        octeliumEnv
-      )
-      logger.info(
-        `Connect output: ${connectResult.stdout.trim() || connectResult.stderr.trim() || 'Started in background'}`
-      )
+      await spawnConnectBackground(domain, apiKey, octeliumEnv)
+      logger.info('octelium connect process launched in background')
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error)
-      logger.error('Connect failed:', error as Error)
+      logger.error('Connect spawn failed:', error as Error)
       return { success: false, error: `Connect failed: ${errorMsg}` }
     }
 
-    // Verify connection
-    await new Promise((resolve) => setTimeout(resolve, 2000))
-    const status = await checkStatusWithEnv(domain)
-    if (status.connected) {
-      logger.info('Successfully connected to Teniu Cloud')
-    } else {
-      logger.warn('Connection verification failed, but command completed')
+    // Poll octelium status to verify connection
+    for (let attempt = 1; attempt <= STATUS_POLL_MAX_ATTEMPTS; attempt++) {
+      await new Promise((resolve) => setTimeout(resolve, STATUS_POLL_INTERVAL_MS))
+      logger.debug(`Checking connection status (attempt ${attempt}/${STATUS_POLL_MAX_ATTEMPTS})`)
+
+      const status = await checkStatusWithEnv(domain)
+      if (status.connected) {
+        logger.info('Successfully connected to Teniu Cloud')
+        return { success: true }
+      }
     }
 
+    // All poll attempts exhausted – the process may still be connecting
+    logger.warn('Connection status not confirmed after polling, but process is running')
     return { success: true }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)
