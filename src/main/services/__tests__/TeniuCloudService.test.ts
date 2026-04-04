@@ -1,13 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// Mock child_process — exec is needed for the shell-based connect flow,
-// execFile is used by all other CLI operations (which, status, install, disconnect).
-// Both inputs are POSIX-escaped in TeniuCloudService (shellEscape) before reaching exec.
+// Mock child_process
 const mockExecFile = vi.fn()
-const mockExec = vi.fn()
 vi.mock('node:child_process', () => ({
-  execFile: (...args: any[]) => mockExecFile(...args),
-  exec: (...args: any[]) => mockExec(...args)
+  execFile: (...args: any[]) => mockExecFile(...args)
 }))
 
 vi.mock('@logger', () => ({
@@ -174,30 +170,35 @@ describe('TeniuCloudService', () => {
     })
   })
 
-  describe('connect (shell exec background)', () => {
-    // Helper: exec() callback succeeds immediately (shell returns after forking &)
-    function mockExecOk() {
-      mockExec.mockImplementation(
-        (_cmd: string, _opts: unknown, cb: (err: Error | null, stdout: string, stderr: string) => void) => {
-          cb(null, '', '')
-        }
-      )
-    }
-
-    // Helper: exec() callback fails
-    function mockExecFail(message: string) {
-      mockExec.mockImplementation(
-        (_cmd: string, _opts: unknown, cb: (err: Error | null, stdout: string, stderr: string) => void) => {
-          cb(new Error(message), '', message)
-        }
-      )
-    }
-
-    it('should exec nohup connect with & and verify via status polling', async () => {
-      mockExecOk()
-      // which octelium → found, then status polling: which → found, status → connected
+  describe('connect (execFile with --serve)', () => {
+    it('should connect with --serve when serviceName is provided', async () => {
+      // which octelium → found, connect → success, which octelium → found, status → connected
       mockExecFileSequence([
         { stdout: '/usr/local/bin/octelium' },
+        { stdout: 'Connected' },
+        { stdout: '/usr/local/bin/octelium' },
+        { stdout: 'cluster: teniuapi.cloud\nsession: abc\nuser: admin' }
+      ])
+
+      const result = await connect('https://teniuapi.cloud', 'test-auth-token', 'admin-prd12test02')
+      expect(result.success).toBe(true)
+
+      // Verify the connect command includes --serve
+      const connectCall = mockExecFile.mock.calls.find(
+        (call: any[]) => call[0] === 'octelium' && call[1]?.includes('connect')
+      )
+      expect(connectCall).toBeDefined()
+      expect(connectCall![1]).toContain('--serve')
+      expect(connectCall![1]).toContain('admin-prd12test02')
+      expect(connectCall![1]).toContain('--auth-token')
+      expect(connectCall![1]).toContain('test-auth-token')
+    })
+
+    it('should connect without --serve when no serviceName', async () => {
+      // which → found, connect → success, which → found, status → connected
+      mockExecFileSequence([
+        { stdout: '/usr/local/bin/octelium' },
+        { stdout: 'Connected' },
         { stdout: '/usr/local/bin/octelium' },
         { stdout: 'cluster: teniuapi.cloud\nsession: abc\nuser: admin' }
       ])
@@ -205,64 +206,19 @@ describe('TeniuCloudService', () => {
       const result = await connect('https://teniuapi.cloud', 'test-auth-token')
       expect(result.success).toBe(true)
 
-      // Verify exec was called with nohup ... &
-      expect(mockExec).toHaveBeenCalledWith(
-        expect.stringContaining('nohup octelium connect'),
-        expect.any(Object),
-        expect.any(Function)
+      const connectCall = mockExecFile.mock.calls.find(
+        (call: any[]) => call[0] === 'octelium' && call[1]?.includes('connect')
       )
-      const cmd = mockExec.mock.calls[0][0] as string
-      expect(cmd).toContain('--domain')
-      expect(cmd).toContain('--auth-token')
-      expect(cmd).toContain('&')
-      // Ensure the old -d (daemon/TUN) flag is not present as a separate argument
-      expect(cmd).not.toMatch(/\s-d\s/)
+      expect(connectCall![1]).not.toContain('--serve')
     })
 
-    it('should return error when exec fails', async () => {
-      mockExecFail('command not found')
-      // which octelium → found
-      mockExecFileSequence([{ stdout: '/usr/local/bin/octelium' }])
+    it('should return error when connect command fails', async () => {
+      // which → found, connect → fail
+      mockExecFileSequence([{ stdout: '/usr/local/bin/octelium' }, { error: 'connection refused' }])
 
-      const result = await connect('https://teniuapi.cloud', 'test-auth-token')
+      const result = await connect('https://teniuapi.cloud', 'test-auth-token', 'admin-prd12test02')
       expect(result.success).toBe(false)
       expect(result.error).toContain('Connect failed')
-    })
-
-    it('should succeed when status confirms connection on a later poll attempt', async () => {
-      mockExecOk()
-      // which octelium → found, then first status poll fails, second succeeds
-      let execFileCallIndex = 0
-      mockExecFile.mockImplementation(
-        (
-          _cmd: string,
-          _args: string[],
-          _opts: unknown,
-          cb: (err: Error | null, stdout: string, stderr: string) => void
-        ) => {
-          execFileCallIndex++
-          if (execFileCallIndex === 1) {
-            cb(null, '/usr/local/bin/octelium', '')
-            return
-          }
-          if (execFileCallIndex === 2) {
-            cb(null, '/usr/local/bin/octelium', '')
-            return
-          }
-          if (execFileCallIndex === 3) {
-            cb(new Error('not connected'), '', 'not connected')
-            return
-          }
-          if (execFileCallIndex === 4) {
-            cb(null, '/usr/local/bin/octelium', '')
-            return
-          }
-          cb(null, 'cluster: teniuapi.cloud\nsession: abc\nuser: admin', '')
-        }
-      )
-
-      const result = await connect('https://teniuapi.cloud', 'test-auth-token')
-      expect(result.success).toBe(true)
     })
   })
 

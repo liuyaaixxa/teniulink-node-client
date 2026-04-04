@@ -160,41 +160,45 @@ const TeniuCloudSettings: FC = () => {
     dispatch(setTeniuCloudConnectionStatus('connecting'))
 
     try {
-      const result = await window.api.teniuCloudConnect(teniuCloudConfig.apiUrl, teniuCloudConfig.apiKey)
+      // Step 1: Resolve service name BEFORE connecting
+      let serviceName: string | undefined
+      try {
+        const tokensResult = await window.api.teniuCloudGetDeviceTokens()
+        if (tokensResult.success && tokensResult.tokens.length > 0 && authState?.username) {
+          const apiKey = teniuCloudConfig.apiKey
+          const keyPrefix = apiKey.substring(0, 4)
+          const keySuffix = apiKey.substring(apiKey.length - 4)
+
+          const matched = tokensResult.tokens.find((token) => {
+            if (!token.tokenMask) return false
+            return (
+              token.tokenMask.substring(0, 4) === keyPrefix &&
+              token.tokenMask.substring(token.tokenMask.length - 4) === keySuffix
+            )
+          })
+
+          const deviceName = matched?.name || tokensResult.tokens.find((tk) => tk.status === 1)?.name
+          if (deviceName) {
+            serviceName = `${authState.username}-${deviceName}`
+              .replace(/[\s_]+/g, '-')
+              .toLowerCase()
+              .substring(0, 64)
+            logger.info(`Service name resolved: ${serviceName}`)
+          }
+        }
+      } catch (error) {
+        logger.warn('Failed to resolve service name, connecting without --serve:', error as Error)
+      }
+
+      // Step 2: Connect with --serve "{serviceName}"
+      const result = await window.api.teniuCloudConnect(teniuCloudConfig.apiUrl, teniuCloudConfig.apiKey, serviceName)
 
       if (result.success) {
         dispatch(setTeniuCloudConnectionStatus('connected'))
-        window.toast.success(t('teniuCloud.messages.connectSuccess'))
-
-        // Resolve service name in background
-        try {
-          const tokensResult = await window.api.teniuCloudGetDeviceTokens()
-          if (tokensResult.success && tokensResult.tokens.length > 0 && authState?.username) {
-            const apiKey = teniuCloudConfig.apiKey
-            const keyPrefix = apiKey.substring(0, 4)
-            const keySuffix = apiKey.substring(apiKey.length - 4)
-
-            const matched = tokensResult.tokens.find((token) => {
-              if (!token.tokenMask) return false
-              return (
-                token.tokenMask.substring(0, 4) === keyPrefix &&
-                token.tokenMask.substring(token.tokenMask.length - 4) === keySuffix
-              )
-            })
-
-            const deviceName = matched?.name || tokensResult.tokens.find((t) => t.status === 1)?.name
-            if (deviceName) {
-              const serviceName = `${authState.username}-${deviceName}`
-                .replace(/[\s_]+/g, '-')
-                .toLowerCase()
-                .substring(0, 64)
-              dispatch(setTeniuCloudServiceName(serviceName))
-              logger.info(`Service name resolved: ${serviceName}`)
-            }
-          }
-        } catch (error) {
-          logger.warn('Failed to resolve service name:', error as Error)
+        if (serviceName) {
+          dispatch(setTeniuCloudServiceName(serviceName))
         }
+        window.toast.success(t('teniuCloud.messages.connectSuccess'))
       } else {
         dispatch(setTeniuCloudConnectionStatus('disconnected'))
         showErrorModal(result.error || t('teniuCloud.messages.connectFailed'))

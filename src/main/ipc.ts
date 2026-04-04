@@ -1223,8 +1223,8 @@ export async function registerIpc(mainWindow: BrowserWindow, app: Electron.App) 
   ipcMain.handle(IpcChannel.Auth_CheckAuth, (_, token?: string) => authService.checkAuth(token))
 
   // Teniu Cloud
-  ipcMain.handle(IpcChannel.TeniuCloud_Connect, (_, apiUrl: string, apiKey: string) =>
-    teniuCloudService.connect(apiUrl, apiKey)
+  ipcMain.handle(IpcChannel.TeniuCloud_Connect, (_, apiUrl: string, apiKey: string, serviceName?: string) =>
+    teniuCloudService.connect(apiUrl, apiKey, serviceName)
   )
   ipcMain.handle(IpcChannel.TeniuCloud_Disconnect, (_, serviceName?: string) =>
     teniuCloudService.disconnect(serviceName)

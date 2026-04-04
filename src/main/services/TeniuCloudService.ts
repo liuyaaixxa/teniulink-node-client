@@ -1,4 +1,4 @@
-import { exec, execFile } from 'node:child_process'
+import { execFile } from 'node:child_process'
 
 import { loggerService } from '@logger'
 import { API_SERVER_DEFAULTS } from '@shared/config/constant'
@@ -197,53 +197,14 @@ export async function installOctelium(): Promise<CommandResult> {
   }
 }
 
-/**
- * POSIX-safe single-quote escaping: wraps value in single quotes,
- * escaping any embedded single quotes as '\'' (end quote, escaped quote, start quote).
- */
-function shellEscape(value: string): string {
-  return "'" + value.replace(/'/g, "'\\''") + "'"
-}
+const CONNECT_TIMEOUT_MS = 60000
 
 /**
- * Run `octelium connect --domain X --auth-token Y &` via exec().
- * exec() runs the command through the user's default shell (/bin/sh),
- * matching the exact behaviour of typing the command in a terminal.
- * nohup + output redirection + & ensures the process is fully detached.
- *
- * Domain and apiKey are POSIX single-quote escaped to prevent injection.
+ * Connect to Teniu Cloud using octelium connect command.
+ * Uses: octelium connect --serve "{serviceName}" --domain {domain} --auth-token {apiKey}
+ * The --serve flag registers the connection as a named service.
  */
-function shellConnectBackground(domain: string, apiKey: string, env: NodeJS.ProcessEnv): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const mergedEnv = { ...process.env, ...env }
-    const escapedDomain = shellEscape(domain)
-    const escapedKey = shellEscape(apiKey)
-
-    const cmd = `nohup octelium connect --domain ${escapedDomain} --auth-token ${escapedKey} > /dev/null 2>&1 &`
-
-    logger.debug(`Shell exec: octelium connect --domain ${domain} --auth-token ***`)
-
-    exec(cmd, { env: mergedEnv }, (error) => {
-      if (error) {
-        logger.error('Failed to exec octelium connect:', error)
-        reject(new Error(`Failed to start octelium: ${error.message}`))
-        return
-      }
-      resolve()
-    })
-  })
-}
-
-// How many times to poll status and how long between polls
-const STATUS_POLL_INTERVAL_MS = 1500
-const STATUS_POLL_MAX_ATTEMPTS = 10
-
-/**
- * Connect to Teniu Cloud using background octelium connect command.
- * Uses: octelium connect --domain {domain} --auth-token {apiKey} (background)
- * Then polls `octelium status` to verify the connection is established.
- */
-export async function connect(apiUrl: string, apiKey: string): Promise<CommandResult> {
+export async function connect(apiUrl: string, apiKey: string, serviceName?: string): Promise<CommandResult> {
   try {
     // Check if octelium is installed, auto-install if not
     let installed = await isOcteliumInstalled()
@@ -261,34 +222,35 @@ export async function connect(apiUrl: string, apiKey: string): Promise<CommandRe
     }
 
     const domain = extractDomain(apiUrl)
-    logger.info(`Connecting to Teniu Cloud: ${domain}`)
+    logger.info(`Connecting to Teniu Cloud: ${domain}${serviceName ? ` (serve: ${serviceName})` : ''}`)
 
     const octeliumEnv = getOcteliumEnv(domain)
 
-    // Shell background: octelium connect --domain X --auth-token Y &
+    // Build connect args: octelium connect --serve "name" --domain X --auth-token Y
+    const connectArgs = ['connect']
+    if (serviceName) {
+      connectArgs.push('--serve', serviceName)
+    }
+    connectArgs.push('--domain', domain, '--auth-token', apiKey)
+
     try {
-      await shellConnectBackground(domain, apiKey, octeliumEnv)
-      logger.info('octelium connect launched in shell background')
+      const connectResult = await executeCommand('octelium', connectArgs, CONNECT_TIMEOUT_MS, octeliumEnv)
+      logger.info(`Connect output: ${connectResult.stdout.trim() || connectResult.stderr.trim() || 'Started'}`)
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error)
-      logger.error('Connect spawn failed:', error as Error)
+      logger.error('Connect failed:', error as Error)
       return { success: false, error: `Connect failed: ${errorMsg}` }
     }
 
-    // Poll octelium status to verify connection
-    for (let attempt = 1; attempt <= STATUS_POLL_MAX_ATTEMPTS; attempt++) {
-      await new Promise((resolve) => setTimeout(resolve, STATUS_POLL_INTERVAL_MS))
-      logger.debug(`Checking connection status (attempt ${attempt}/${STATUS_POLL_MAX_ATTEMPTS})`)
-
-      const status = await checkStatusWithEnv(domain)
-      if (status.connected) {
-        logger.info('Successfully connected to Teniu Cloud')
-        return { success: true }
-      }
+    // Verify connection
+    await new Promise((resolve) => setTimeout(resolve, 2000))
+    const status = await checkStatusWithEnv(domain)
+    if (status.connected) {
+      logger.info('Successfully connected to Teniu Cloud')
+    } else {
+      logger.warn('Connection verification failed, but command completed')
     }
 
-    // All poll attempts exhausted – the process may still be connecting
-    logger.warn('Connection status not confirmed after polling, but process is running')
     return { success: true }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)

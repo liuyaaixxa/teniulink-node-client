@@ -159,8 +159,12 @@ const api = {
   authCheckAuth: (token?: string): Promise<{ valid: boolean; error?: string }> =>
     ipcRenderer.invoke(IpcChannel.Auth_CheckAuth, token),
   // Teniu Cloud
-  teniuCloudConnect: (apiUrl: string, apiKey: string): Promise<{ success: boolean; error?: string }> =>
-    ipcRenderer.invoke(IpcChannel.TeniuCloud_Connect, apiUrl, apiKey),
+  teniuCloudConnect: (
+    apiUrl: string,
+    apiKey: string,
+    serviceName?: string
+  ): Promise<{ success: boolean; error?: string }> =>
+    ipcRenderer.invoke(IpcChannel.TeniuCloud_Connect, apiUrl, apiKey, serviceName),
   teniuCloudDisconnect: (serviceName?: string): Promise<{ success: boolean; error?: string }> =>
     ipcRenderer.invoke(IpcChannel.TeniuCloud_Disconnect, serviceName),
   teniuCloudCheckStatus: (): Promise<{ connected: boolean; error?: string }> =>
