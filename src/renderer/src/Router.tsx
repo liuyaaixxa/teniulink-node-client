@@ -1,5 +1,6 @@
 import '@renderer/databases'
 
+import { useSettings } from '@renderer/hooks/useSettings'
 import type { FC } from 'react'
 import { useMemo } from 'react'
 import { HashRouter, Route, Routes } from 'react-router-dom'
@@ -16,6 +17,7 @@ import FilesPage from './pages/files/FilesPage'
 import HomePage from './pages/home/HomePage'
 import KnowledgePage from './pages/knowledge/KnowledgePage'
 import LaunchpadPage from './pages/launchpad/LaunchpadPage'
+import LoginPage from './pages/login/LoginPage'
 import MinAppPage from './pages/minapps/MinAppPage'
 import MinAppsPage from './pages/minapps/MinAppsPage'
 import NotesPage from './pages/notes/NotesPage'
@@ -29,6 +31,7 @@ import TranslatePage from './pages/translate/TranslatePage'
 const Router: FC = () => {
   const { onboardingCompleted, completeOnboarding } = useOnboardingState()
   const { navbarPosition } = useNavbarPosition()
+  const { auth } = useSettings()
 
   const routes = useMemo(() => {
     return (
@@ -55,6 +58,10 @@ const Router: FC = () => {
 
   if (!onboardingCompleted) {
     return <OnboardingPage onComplete={completeOnboarding} />
+  }
+
+  if (!auth?.isLoggedIn) {
+    return <LoginPage />
   }
 
   if (navbarPosition === 'left') {

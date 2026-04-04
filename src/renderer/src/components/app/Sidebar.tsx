@@ -41,7 +41,7 @@ import { SidebarOpenedMinappTabs, SidebarPinnedApps } from './PinnedMinapps'
 const Sidebar: FC = () => {
   const { hideMinappPopup } = useMinappPopup()
   const { minappShow } = useRuntime()
-  const { sidebarIcons } = useSettings()
+  const { sidebarIcons, auth } = useSettings()
   const { pinned } = useMinapps()
 
   const { pathname } = useLocation()
@@ -69,13 +69,16 @@ const Sidebar: FC = () => {
       $isFullscreen={isFullscreen}
       id="app-sidebar"
       style={{ backgroundColor, zIndex: minappShow ? 10000 : 'initial' }}>
-      {isEmoji(avatar) ? (
-        <EmojiAvatar onClick={onEditUser} className="sidebar-avatar" size={31} fontSize={18}>
-          {avatar}
-        </EmojiAvatar>
-      ) : (
-        <AvatarImg src={avatar || UserAvatar} draggable={false} className="nodrag" onClick={onEditUser} />
-      )}
+      <AvatarWrapper>
+        {isEmoji(avatar) ? (
+          <EmojiAvatar onClick={onEditUser} className="sidebar-avatar" size={31} fontSize={18}>
+            {avatar}
+          </EmojiAvatar>
+        ) : (
+          <AvatarImg src={avatar || UserAvatar} draggable={false} className="nodrag" onClick={onEditUser} />
+        )}
+        <StatusDot $isLoggedIn={!!auth?.isLoggedIn} />
+      </AvatarWrapper>
       <MainMenusContainer>
         <Menus onClick={hideMinappPopup}>
           <MainMenus />
@@ -197,12 +200,33 @@ const Container = styled.div<{ $isFullscreen: boolean }>`
   }
 `
 
+const AvatarWrapper = styled.div`
+  position: relative;
+  display: inline-flex;
+  -webkit-app-region: none;
+  margin-bottom: ${isMac ? '12px' : '12px'};
+  margin-top: ${isMac ? '0px' : '2px'};
+  .sidebar-avatar {
+    margin-bottom: 0 !important;
+    margin-top: 0 !important;
+  }
+`
+
+const StatusDot = styled.div<{ $isLoggedIn: boolean }>`
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: ${({ $isLoggedIn }) => ($isLoggedIn ? '#52c41a' : '#8c8c8c')};
+  border: 1.5px solid var(--color-background);
+`
+
 const AvatarImg = styled(Avatar)`
   width: 31px;
   height: 31px;
   background-color: var(--color-background-soft);
-  margin-bottom: ${isMac ? '12px' : '12px'};
-  margin-top: ${isMac ? '0px' : '2px'};
   border: none;
   cursor: pointer;
 `

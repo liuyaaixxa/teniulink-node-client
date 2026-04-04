@@ -5,9 +5,10 @@ import { useSettings } from '@renderer/hooks/useSettings'
 import ImageStorage from '@renderer/services/ImageStorage'
 import { useAppDispatch } from '@renderer/store'
 import { setAvatar } from '@renderer/store/runtime'
-import { setUserName } from '@renderer/store/settings'
+import { setAuthLogout, setUserName } from '@renderer/store/settings'
 import { compressImage, isEmoji } from '@renderer/utils'
-import { Avatar, Dropdown, Input, Modal, Popover, Upload } from 'antd'
+import { Avatar, Button, Dropdown, Input, Modal, Popover, Upload } from 'antd'
+import { LogOut } from 'lucide-react'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import styled from 'styled-components'
@@ -25,7 +26,7 @@ const PopupContainer: React.FC<Props> = ({ resolve }) => {
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const { t } = useTranslation()
-  const { userName } = useSettings()
+  const { userName, auth } = useSettings()
   const dispatch = useAppDispatch()
   const avatar = useAvatar()
 
@@ -39,6 +40,11 @@ const PopupContainer: React.FC<Props> = ({ resolve }) => {
 
   const onClose = () => {
     resolve({})
+  }
+
+  const handleLogout = () => {
+    dispatch(setAuthLogout())
+    setOpen(false)
   }
 
   const handleEmojiClick = async (emoji: string) => {
@@ -120,6 +126,16 @@ const PopupContainer: React.FC<Props> = ({ resolve }) => {
     }
   ]
 
+  const loginTimeFormatted = auth?.loginTime
+    ? new Date(auth.loginTime).toLocaleString(undefined, {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    : ''
+
   return (
     <Modal
       width="300px"
@@ -175,6 +191,23 @@ const PopupContainer: React.FC<Props> = ({ resolve }) => {
           maxLength={30}
         />
       </HStack>
+      {auth?.isLoggedIn && (
+        <AuthInfoSection>
+          <AuthInfoRow>
+            <AuthLabel>{t('settings.general.user_name.placeholder')}:</AuthLabel>
+            <AuthValue>{auth.username}</AuthValue>
+          </AuthInfoRow>
+          {loginTimeFormatted && (
+            <AuthInfoRow>
+              <AuthLabel>Login:</AuthLabel>
+              <AuthValue>{loginTimeFormatted}</AuthValue>
+            </AuthInfoRow>
+          )}
+          <LogoutButton type="text" danger icon={<LogOut size={14} />} onClick={handleLogout} block>
+            Logout
+          </LogoutButton>
+        </AuthInfoSection>
+      )}
     </Modal>
   )
 }
@@ -187,6 +220,35 @@ const UserAvatar = styled(Avatar)`
   &:hover {
     opacity: 0.8;
   }
+`
+
+const AuthInfoSection = styled.div`
+  padding: 0 20px 16px;
+  border-top: 1px solid var(--color-border);
+  margin-top: 4px;
+  padding-top: 12px;
+`
+
+const AuthInfoRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  font-size: 12px;
+`
+
+const AuthLabel = styled.span`
+  color: var(--color-text-3);
+`
+
+const AuthValue = styled.span`
+  color: var(--color-text-1);
+  font-weight: 500;
+`
+
+const LogoutButton = styled(Button)`
+  margin-top: 8px;
+  font-size: 13px;
 `
 
 export default class UserPopup {

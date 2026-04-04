@@ -45,6 +45,7 @@ import { analyticsService } from './services/AnalyticsService'
 import { apiServerService } from './services/ApiServerService'
 import appService from './services/AppService'
 import AppUpdater from './services/AppUpdater'
+import { authService } from './services/AuthService'
 import BackupManager from './services/BackupManager'
 import CherryINOAuthService from './services/CherryINOAuthService'
 import { codeToolsService } from './services/CodeToolsService'
@@ -1213,6 +1214,13 @@ export async function registerIpc(mainWindow: BrowserWindow, app: Electron.App) 
   ipcMain.handle(IpcChannel.Analytics_TrackTokenUsage, (_, data: TokenUsageData) =>
     analyticsService.trackTokenUsage(data)
   )
+
+  // Auth
+  ipcMain.handle(IpcChannel.Auth_Login, (_, username: string, password: string, apiBase?: string) =>
+    authService.login(username, password, apiBase)
+  )
+  ipcMain.handle(IpcChannel.Auth_Logout, () => authService.logout())
+  ipcMain.handle(IpcChannel.Auth_CheckAuth, (_, token?: string) => authService.checkAuth(token))
 
   // Teniu Cloud
   ipcMain.handle(IpcChannel.TeniuCloud_Connect, (_, apiUrl: string, apiKey: string) =>

@@ -148,6 +148,16 @@ const api = {
   getIpCountry: (): Promise<string> => ipcRenderer.invoke(IpcChannel.App_GetIpCountry),
   getSystemInfo: (): Promise<SystemInfoResult | null> => ipcRenderer.invoke(IpcChannel.App_GetSystemInfo),
   mockCrashRenderProcess: () => ipcRenderer.invoke(IpcChannel.APP_CrashRenderProcess),
+  // Auth
+  authLogin: (
+    username: string,
+    password: string,
+    apiBase?: string
+  ): Promise<{ success: boolean; token?: string; user?: { username: string }; error?: string }> =>
+    ipcRenderer.invoke(IpcChannel.Auth_Login, username, password, apiBase),
+  authLogout: (): Promise<{ success: boolean; error?: string }> => ipcRenderer.invoke(IpcChannel.Auth_Logout),
+  authCheckAuth: (token?: string): Promise<{ valid: boolean; error?: string }> =>
+    ipcRenderer.invoke(IpcChannel.Auth_CheckAuth, token),
   // Teniu Cloud
   teniuCloudConnect: (apiUrl: string, apiKey: string): Promise<{ success: boolean; error?: string }> =>
     ipcRenderer.invoke(IpcChannel.TeniuCloud_Connect, apiUrl, apiKey),

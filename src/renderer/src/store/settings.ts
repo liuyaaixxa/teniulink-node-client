@@ -22,6 +22,7 @@ import { DEFAULT_SIDEBAR_ICONS } from '@renderer/config/sidebar'
 import type {
   ApiServerConfig,
   AssistantsSortType,
+  AuthState,
   CodeStyleVarious,
   LanguageVarious,
   MathEngine,
@@ -40,6 +41,7 @@ import type {
   OpenAIReasoningSummary,
   OpenAIVerbosity
 } from '@renderer/types/aiCoreTypes'
+import { AUTH_DEFAULTS } from '@renderer/types/auth'
 import { TENIU_CLOUD_DEFAULTS } from '@renderer/types/teniuCloud'
 import { API_SERVER_DEFAULTS, UpgradeChannel } from '@shared/config/constant'
 import { v4 as uuid } from 'uuid'
@@ -250,6 +252,8 @@ export interface SettingsState {
   navbarPosition: 'left' | 'top'
   // API Server
   apiServer: ApiServerConfig
+  // Auth
+  auth: AuthState
   // Teniu Cloud
   teniuCloud: TeniuCloudConfig
   showMessageOutline: boolean
@@ -454,6 +458,8 @@ export const initialState: SettingsState = {
     port: API_SERVER_DEFAULTS.PORT,
     apiKey: `cs-sk-${uuid()}`
   },
+  // Auth
+  auth: AUTH_DEFAULTS,
   // Teniu Cloud
   teniuCloud: {
     apiUrl: TENIU_CLOUD_DEFAULTS.API_URL,
@@ -908,6 +914,18 @@ const settingsSlice = createSlice({
         apiKey: action.payload
       }
     },
+    // Auth actions
+    setAuthLogin: (state, action: PayloadAction<{ username: string; token: string; loginTime: string }>) => {
+      state.auth = {
+        isLoggedIn: true,
+        username: action.payload.username,
+        token: action.payload.token,
+        loginTime: action.payload.loginTime
+      }
+    },
+    setAuthLogout: (state) => {
+      state.auth = AUTH_DEFAULTS
+    },
     // Teniu Cloud actions
     setTeniuCloudApiUrl: (state, action: PayloadAction<string>) => {
       state.teniuCloud = {
@@ -1064,6 +1082,9 @@ export const {
   setApiServerEnabled,
   setApiServerPort,
   setApiServerApiKey,
+  // Auth actions
+  setAuthLogin,
+  setAuthLogout,
   // Teniu Cloud actions
   setTeniuCloudApiUrl,
   setTeniuCloudApiKey,
