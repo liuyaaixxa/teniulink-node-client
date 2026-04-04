@@ -1,4 +1,4 @@
-import { execFile, spawn } from 'node:child_process'
+import { exec, execFile } from 'node:child_process'
 
 import { loggerService } from '@logger'
 import { API_SERVER_DEFAULTS } from '@shared/config/constant'
@@ -198,36 +198,39 @@ export async function installOctelium(): Promise<CommandResult> {
 }
 
 /**
- * Run `octelium connect --domain X --auth-token Y &` via /bin/sh.
- * The shell `&` operator backgrounds the process, avoiding the macOS
- * admin-password prompt that the `-d` (daemon/TUN) flag triggers.
+ * POSIX-safe single-quote escaping: wraps value in single quotes,
+ * escaping any embedded single quotes as '\'' (end quote, escaped quote, start quote).
+ */
+function shellEscape(value: string): string {
+  return "'" + value.replace(/'/g, "'\\''") + "'"
+}
+
+/**
+ * Run `octelium connect --domain X --auth-token Y &` via exec().
+ * exec() runs the command through the user's default shell (/bin/sh),
+ * matching the exact behaviour of typing the command in a terminal.
+ * nohup + output redirection + & ensures the process is fully detached.
  *
- * Arguments are passed as shell positional parameters ($0, $1) so that
- * domain and apiKey are never interpolated into the command string,
- * preventing command-injection.
+ * Domain and apiKey are POSIX single-quote escaped to prevent injection.
  */
 function shellConnectBackground(domain: string, apiKey: string, env: NodeJS.ProcessEnv): Promise<void> {
   return new Promise((resolve, reject) => {
     const mergedEnv = { ...process.env, ...env }
+    const escapedDomain = shellEscape(domain)
+    const escapedKey = shellEscape(apiKey)
 
-    // $0 = domain, $1 = apiKey — safe positional args, not string interpolation
-    const child = spawn('/bin/sh', ['-c', 'octelium connect --domain "$0" --auth-token "$1" &', domain, apiKey], {
-      env: mergedEnv,
-      stdio: 'ignore',
-      detached: true
+    const cmd = `nohup octelium connect --domain ${escapedDomain} --auth-token ${escapedKey} > /dev/null 2>&1 &`
+
+    logger.debug(`Shell exec: octelium connect --domain ${domain} --auth-token ***`)
+
+    exec(cmd, { env: mergedEnv }, (error) => {
+      if (error) {
+        logger.error('Failed to exec octelium connect:', error)
+        reject(new Error(`Failed to start octelium: ${error.message}`))
+        return
+      }
+      resolve()
     })
-
-    child.on('error', (err: Error) => {
-      logger.error('Failed to exec octelium connect:', err)
-      reject(new Error(`Failed to start octelium: ${err.message}`))
-    })
-
-    child.unref()
-
-    logger.debug(`Shell background: octelium connect --domain ${domain} --auth-token ***`)
-
-    // Give the shell a moment to fork the background process
-    setTimeout(() => resolve(), 500)
   })
 }
 
