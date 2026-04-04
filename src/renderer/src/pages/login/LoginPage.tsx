@@ -95,33 +95,36 @@ const LoginPage: FC = () => {
     <PageContainer>
       <GlowBg />
       {networkSvg}
-      <ContentWrapper>
-        <LogoSection>
-          <BrandName>
-            Teniu<BrandHighlight>link</BrandHighlight>
-          </BrandName>
-          <Subtitle>Intelligent Gateway Node</Subtitle>
-        </LogoSection>
-        <FormSection>
-          <StyledForm form={form} onFinish={handleLogin} layout="vertical" size="middle">
-            <Form.Item name="username" rules={[{ required: true, message: 'Please enter username' }]}>
-              <StyledInput prefix={<User size={14} color="#64748b" />} placeholder="Username" autoFocus />
-            </Form.Item>
-            <Form.Item name="password" rules={[{ required: true, message: 'Please enter password' }]}>
-              <StyledPasswordInput prefix={<Lock size={14} color="#64748b" />} placeholder="Password" />
-            </Form.Item>
-            <Form.Item style={{ marginBottom: 0, marginTop: 4 }}>
-              <LoginButton type="primary" htmlType="submit" loading={loading} block>
-                Connect Node
-              </LoginButton>
-            </Form.Item>
-          </StyledForm>
-        </FormSection>
-        <StatusBadge>
-          <StatusDot />
-          <span>Teniu Cloud Network</span>
-        </StatusBadge>
-      </ContentWrapper>
+      <LoginCard>
+        <CardGlow />
+        <CardContent>
+          <LogoSection>
+            <BrandName>
+              Teniu<BrandHighlight>link</BrandHighlight>
+            </BrandName>
+            <Subtitle>Intelligent Gateway Node</Subtitle>
+          </LogoSection>
+          <FormSection>
+            <StyledForm form={form} onFinish={handleLogin} layout="vertical" size="middle">
+              <Form.Item name="username" rules={[{ required: true, message: 'Please enter username' }]}>
+                <StyledInput prefix={<User size={14} color="#64748b" />} placeholder="Username" autoFocus />
+              </Form.Item>
+              <Form.Item name="password" rules={[{ required: true, message: 'Please enter password' }]}>
+                <StyledPasswordInput prefix={<Lock size={14} color="#64748b" />} placeholder="Password" />
+              </Form.Item>
+              <Form.Item style={{ marginBottom: 0, marginTop: 4 }}>
+                <LoginButton type="primary" htmlType="submit" loading={loading} block>
+                  Connect Node
+                </LoginButton>
+              </Form.Item>
+            </StyledForm>
+          </FormSection>
+          <StatusBadge>
+            <StatusDot />
+            <span>Teniu Cloud Network</span>
+          </StatusBadge>
+        </CardContent>
+      </LoginCard>
     </PageContainer>
   )
 }
@@ -187,14 +190,35 @@ const NetworkNode = styled.circle<{ $delay: number }>`
   animation-delay: ${({ $delay }) => $delay}s;
 `
 
-const ContentWrapper = styled.div`
+const LoginCard = styled.div`
   position: relative;
   z-index: 1;
+  width: 320px;
+  border-radius: 16px;
+  background: linear-gradient(145deg, rgba(15, 15, 25, 0.95), rgba(8, 8, 16, 0.98));
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow:
+    0 24px 48px rgba(0, 0, 0, 0.6),
+    0 8px 16px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  -webkit-app-region: none;
+  overflow: hidden;
+`
+
+const CardGlow = styled.div`
+  position: absolute;
+  top: -1px;
+  left: 20%;
+  right: 20%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0, 255, 136, 0.5), rgba(0, 168, 255, 0.5), transparent);
+`
+
+const CardContent = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 300px;
-  -webkit-app-region: none;
+  padding: 28px 28px 20px;
 `
 
 const LogoSection = styled.div`
@@ -226,6 +250,7 @@ const Subtitle = styled.div`
 
 const FormSection = styled.div`
   width: 100%;
+  margin-top: 4px;
 `
 
 const StyledForm = styled(Form<LoginFormValues>)`
