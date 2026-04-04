@@ -262,7 +262,7 @@ export async function connect(apiUrl: string, apiKey: string, serviceName?: stri
 
 /**
  * Disconnect from Teniu Cloud
- * Uses: octelium disconnect
+ * Uses: octelium disconnect --logout
  */
 export async function disconnect(): Promise<CommandResult> {
   try {
@@ -274,7 +274,7 @@ export async function disconnect(): Promise<CommandResult> {
     logger.info('Disconnecting from Teniu Cloud')
 
     try {
-      const result = await executeCommand('octelium', ['disconnect'], COMMAND_TIMEOUT_MS, getOcteliumEnv())
+      const result = await executeCommand('octelium', ['disconnect', '--logout'], COMMAND_TIMEOUT_MS, getOcteliumEnv())
       logger.info(`Disconnect output: ${result.stdout.trim() || result.stderr.trim() || 'Done'}`)
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error)

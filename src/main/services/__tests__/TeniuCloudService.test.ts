@@ -238,7 +238,7 @@ describe('TeniuCloudService', () => {
       const disconnectCall = mockExecFile.mock.calls.find(
         (call: any[]) => call[0] === 'octelium' && call[1]?.includes('disconnect')
       )
-      expect(disconnectCall![1]).toEqual(['disconnect'])
+      expect(disconnectCall![1]).toEqual(['disconnect', '--logout'])
     })
 
     it('should succeed when octelium is not installed', async () => {
