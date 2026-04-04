@@ -1,4 +1,3 @@
-import TeniulinkLogo from '@renderer/assets/images/teniulink-logo.svg'
 import { useAppDispatch } from '@renderer/store'
 import { setAuthLogin } from '@renderer/store/settings'
 import { Button, Form, Input, message } from 'antd'
@@ -47,7 +46,6 @@ const LoginPage: FC = () => {
       <GlowBg />
       <ContentWrapper>
         <LogoSection>
-          <Logo src={TeniulinkLogo} alt="Teniulink Node" draggable={false} />
           <BrandName>
             Teniu<BrandHighlight>link</BrandHighlight>
           </BrandName>
@@ -121,12 +119,6 @@ const ContentWrapper = styled.div`
 const LogoSection = styled.div`
   text-align: center;
   margin-bottom: 24px;
-`
-
-const Logo = styled.img`
-  width: 56px;
-  height: 56px;
-  margin-bottom: 10px;
 `
 
 const BrandName = styled.div`

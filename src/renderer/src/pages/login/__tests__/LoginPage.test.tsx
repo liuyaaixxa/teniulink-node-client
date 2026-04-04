@@ -31,10 +31,6 @@ vi.mock('@renderer/store/settings', () => ({
   setAuthLogout: vi.fn()
 }))
 
-vi.mock('@renderer/assets/images/teniulink-logo.svg', () => ({
-  default: 'test-logo.svg'
-}))
-
 describe('LoginPage', () => {
   it('should render login form with username and password fields', async () => {
     const { default: LoginPage } = await import('../LoginPage')
@@ -45,11 +41,11 @@ describe('LoginPage', () => {
     expect(screen.getByRole('button', { name: /connect node/i })).toBeInTheDocument()
   })
 
-  it('should render Teniulink logo', async () => {
+  it('should render brand name', async () => {
     const { default: LoginPage } = await import('../LoginPage')
     render(<LoginPage />)
 
-    expect(screen.getByAltText('Teniulink Node')).toBeInTheDocument()
+    expect(screen.getByText('link')).toBeInTheDocument()
   })
 
   it('should render subtitle text', async () => {
