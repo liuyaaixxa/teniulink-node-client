@@ -14,6 +14,10 @@ const DEFAULT_API_BASE = __TENIU_CLOUD_API_BASE__
 const COMMAND_TIMEOUT_MS = 30000
 const STATUS_TIMEOUT_MS = 10000
 const INSTALL_TIMEOUT_MS = 300000 // 5 minutes for brew install
+const LOGOUT_TIMEOUT_MS = 5000
+
+// Module-level state: remember the domain used during connect for disconnect/cleanup
+let connectedDomain: string | null = null
 
 interface CommandResult {
   success: boolean
@@ -219,9 +223,31 @@ export async function connect(apiUrl: string, apiKey: string, serviceName?: stri
     }
 
     const domain = extractDomain(apiUrl)
+    connectedDomain = domain
     logger.info(`Connecting to Teniu Cloud: ${domain}${serviceName ? ` (serve: ${serviceName})` : ''}`)
 
-    // Build connect args: octelium connect --serve "name" --domain X --auth-token Y
+    // Step 1: logout stale sessions (best-effort)
+    try {
+      await executeCommand('octelium', ['logout'], LOGOUT_TIMEOUT_MS, getOcteliumEnv(domain))
+      logger.info('Pre-connect logout completed')
+    } catch {
+      logger.debug('Pre-connect logout skipped (no stale session or not logged in)')
+    }
+
+    // Step 2: login to establish session before connect
+    try {
+      await executeCommand(
+        'octelium',
+        ['login', '--domain', domain, `--auth-token=${apiKey}`],
+        COMMAND_TIMEOUT_MS,
+        getOcteliumEnv(domain)
+      )
+      logger.info('Pre-connect login completed')
+    } catch (error) {
+      logger.warn(`Pre-connect login failed: ${error instanceof Error ? error.message : String(error)}`)
+    }
+
+    // Step 3: Build connect args
     const connectArgs = ['connect']
     if (serviceName) {
       connectArgs.push('--serve', serviceName)
@@ -261,6 +287,56 @@ export async function connect(apiUrl: string, apiKey: string, serviceName?: stri
 }
 
 /**
+ * Find and kill any remaining octelium processes after disconnect.
+ * Strategy: pkill -f first (matches full command line), then verify with ps -ef.
+ * Best-effort — failures are logged, not thrown.
+ */
+async function killRemainingOcteliumProcesses(): Promise<void> {
+  try {
+    // Step 1: pkill -f "octelium connect" — matches full command line
+    try {
+      await executeCommand('pkill', ['-9', '-f', 'octelium connect'], LOGOUT_TIMEOUT_MS)
+      logger.info('Killed octelium connect processes via pkill')
+    } catch {
+      logger.debug('pkill found no octelium connect processes (or not available)')
+    }
+
+    // Step 2: Verify with ps -ef, kill any stragglers with SIGKILL
+    try {
+      const { stdout } = await executeCommand('ps', ['-ef'], STATUS_TIMEOUT_MS)
+      const lines = stdout.split('\n')
+      const octeliumLines = lines.filter(
+        (line) => line.includes('octelium') && !line.includes('grep') && !line.includes('ps -ef')
+      )
+
+      if (octeliumLines.length === 0) {
+        logger.info('Verified: no remaining octelium processes')
+        return
+      }
+
+      logger.warn(`${octeliumLines.length} octelium process(es) still remain, force killing...`)
+
+      for (const line of octeliumLines) {
+        const parts = line.trim().split(/\s+/)
+        const pid = parseInt(parts[1], 10)
+        if (isNaN(pid) || pid <= 0) continue
+
+        try {
+          process.kill(pid, 'SIGKILL')
+          logger.info(`Force killed octelium process PID=${pid}`)
+        } catch (err) {
+          logger.debug(`Failed to kill PID=${pid}: ${err instanceof Error ? err.message : String(err)}`)
+        }
+      }
+    } catch {
+      logger.debug('ps verification skipped')
+    }
+  } catch (error) {
+    logger.debug(`Process cleanup error: ${error instanceof Error ? error.message : String(error)}`)
+  }
+}
+
+/**
  * Disconnect from Teniu Cloud
  * Uses: octelium disconnect --logout
  */
@@ -271,10 +347,13 @@ export async function disconnect(): Promise<CommandResult> {
       return { success: true }
     }
 
-    logger.info('Disconnecting from Teniu Cloud')
+    const domain = connectedDomain
+    const env = getOcteliumEnv(domain || undefined)
+    logger.info(`Disconnecting from Teniu Cloud (domain=${domain || 'unknown'})`)
 
+    // Step 1: octelium disconnect --logout
     try {
-      const result = await executeCommand('octelium', ['disconnect', '--logout'], COMMAND_TIMEOUT_MS, getOcteliumEnv())
+      const result = await executeCommand('octelium', ['disconnect', '--logout'], COMMAND_TIMEOUT_MS, env)
       logger.info(`Disconnect output: ${result.stdout.trim() || result.stderr.trim() || 'Done'}`)
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error)
@@ -287,10 +366,22 @@ export async function disconnect(): Promise<CommandResult> {
       ) {
         logger.info('No active tunnel to close')
       } else {
-        logger.warn('Disconnect failed:', error as Error)
+        logger.warn('Disconnect command failed:', error as Error)
       }
     }
 
+    // Step 2: octelium logout to fully clear session
+    try {
+      await executeCommand('octelium', ['logout'], LOGOUT_TIMEOUT_MS, env)
+      logger.info('Post-disconnect logout completed')
+    } catch {
+      logger.debug('Post-disconnect logout skipped (no session)')
+    }
+
+    // Step 3: kill any remaining octelium processes
+    await killRemainingOcteliumProcesses()
+
+    connectedDomain = null
     logger.info('Successfully disconnected from Teniu Cloud')
     return { success: true }
   } catch (error) {

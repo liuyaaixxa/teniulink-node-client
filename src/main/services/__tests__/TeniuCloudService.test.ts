@@ -177,11 +177,11 @@ describe('TeniuCloudService', () => {
 
   describe('connect (spawn detached)', () => {
     it('should spawn connect with --serve when serviceName is provided', async () => {
-      // which octelium → found (for isOcteliumInstalled)
-      // Then spawn is called for connect (detached, no callback)
-      // Then which → found, status → connected (for verification)
+      // which → found, logout → ok, login → ok, which → found, status → connected
       mockExecFileSequence([
         { stdout: '/usr/local/bin/octelium' },
+        { stdout: 'Logged out' },
+        { stdout: 'Logged in' },
         { stdout: '/usr/local/bin/octelium' },
         { stdout: 'cluster: teniuapi.cloud\nsession: abc\nuser: admin' }
       ])
@@ -201,9 +201,61 @@ describe('TeniuCloudService', () => {
       expect(mockChild.unref).toHaveBeenCalled()
     })
 
-    it('should spawn connect without --serve when no serviceName', async () => {
+    it('should call logout then login before spawning connect', async () => {
+      // which → found, logout → ok, login → ok, which → found, status → connected
       mockExecFileSequence([
         { stdout: '/usr/local/bin/octelium' },
+        { stdout: 'Logged out' },
+        { stdout: 'Logged in' },
+        { stdout: '/usr/local/bin/octelium' },
+        { stdout: 'cluster: teniuapi.cloud\nsession: abc\nuser: admin' }
+      ])
+
+      const mockChild = { on: vi.fn(), unref: vi.fn() }
+      mockSpawn.mockReturnValue(mockChild)
+
+      await connect('https://teniuapi.cloud', 'test-auth-token', 'admin-test')
+
+      // Verify logout was called
+      const logoutCall = mockExecFile.mock.calls.find(
+        (call: any[]) => call[0] === 'octelium' && call[1]?.[0] === 'logout'
+      )
+      expect(logoutCall).toBeTruthy()
+
+      // Verify login was called with --domain and --auth-token
+      const loginCall = mockExecFile.mock.calls.find(
+        (call: any[]) => call[0] === 'octelium' && call[1]?.[0] === 'login'
+      )
+      expect(loginCall).toBeTruthy()
+      expect(loginCall![1]).toContain('--domain')
+      expect(loginCall![1]).toContain('teniuapi.cloud')
+      expect(loginCall![1]).toContain('--auth-token=test-auth-token')
+    })
+
+    it('should proceed with connect when pre-connect logout or login fails', async () => {
+      // which → found, logout → error, login → error, which → found, status → connected
+      mockExecFileSequence([
+        { stdout: '/usr/local/bin/octelium' },
+        { error: 'not logged in' },
+        { error: 'login failed' },
+        { stdout: '/usr/local/bin/octelium' },
+        { stdout: 'cluster: teniuapi.cloud\nsession: abc\nuser: admin' }
+      ])
+
+      const mockChild = { on: vi.fn(), unref: vi.fn() }
+      mockSpawn.mockReturnValue(mockChild)
+
+      const result = await connect('https://teniuapi.cloud', 'test-auth-token', 'admin-test')
+      expect(result.success).toBe(true)
+      expect(mockSpawn).toHaveBeenCalled()
+    })
+
+    it('should spawn connect without --serve when no serviceName', async () => {
+      // which → found, logout → ok, login → ok, which → found, status → connected
+      mockExecFileSequence([
+        { stdout: '/usr/local/bin/octelium' },
+        { stdout: 'Logged out' },
+        { stdout: 'Logged in' },
         { stdout: '/usr/local/bin/octelium' },
         { stdout: 'cluster: teniuapi.cloud\nsession: abc\nuser: admin' }
       ])
@@ -228,9 +280,15 @@ describe('TeniuCloudService', () => {
   })
 
   describe('disconnect', () => {
-    it('should run bare disconnect', async () => {
-      // which → found, disconnect → success
-      mockExecFileSequence([{ stdout: '/usr/local/bin/octelium' }, { stdout: 'Disconnected' }])
+    it('should run disconnect with logout and killall cleanup', async () => {
+      // which → found, disconnect → success, logout → success, killall → success, ps → clean
+      mockExecFileSequence([
+        { stdout: '/usr/local/bin/octelium' },
+        { stdout: 'Disconnected' },
+        { stdout: 'Logged out' },
+        { stdout: '' },
+        { stdout: 'UID  PID  PPID  C STIME TTY TIME CMD\nroot 1 0 0 Jan01 ? 00:00:00 /sbin/init' }
+      ])
 
       const result = await disconnect()
       expect(result.success).toBe(true)
@@ -239,6 +297,63 @@ describe('TeniuCloudService', () => {
         (call: any[]) => call[0] === 'octelium' && call[1]?.includes('disconnect')
       )
       expect(disconnectCall![1]).toEqual(['disconnect', '--logout'])
+
+      const logoutCall = mockExecFile.mock.calls.find(
+        (call: any[]) => call[0] === 'octelium' && call[1]?.[0] === 'logout'
+      )
+      expect(logoutCall).toBeTruthy()
+
+      const killallCall = mockExecFile.mock.calls.find((call: any[]) => call[0] === 'pkill' && call[1]?.includes('-f'))
+      expect(killallCall![1]).toEqual(['-9', '-f', 'octelium connect'])
+    })
+
+    it('should force kill remaining octelium processes after disconnect', async () => {
+      const killSpy = vi.spyOn(process, 'kill').mockImplementation(() => true)
+
+      // which → found, disconnect → success, logout → success, killall → success, ps → has straggler
+      mockExecFileSequence([
+        { stdout: '/usr/local/bin/octelium' },
+        { stdout: 'Disconnected' },
+        { stdout: 'Logged out' },
+        { stdout: '' },
+        {
+          stdout: 'UID  PID  PPID  C STIME TTY TIME CMD\nuser 12345 1 0 Jan01 ? 00:00:00 octelium connect --serve test'
+        }
+      ])
+
+      const result = await disconnect()
+      expect(result.success).toBe(true)
+      expect(killSpy).toHaveBeenCalledWith(12345, 'SIGKILL')
+
+      killSpy.mockRestore()
+    })
+
+    it('should succeed when killall cleans all processes', async () => {
+      // which → found, disconnect → success, logout → error, killall → success, ps → clean
+      mockExecFileSequence([
+        { stdout: '/usr/local/bin/octelium' },
+        { stdout: 'Disconnected' },
+        { error: 'not logged in' },
+        { stdout: '' },
+        { stdout: 'UID  PID  PPID  C STIME TTY TIME CMD\nroot 1 0 0 Jan01 ? 00:00:00 /sbin/init' }
+      ])
+
+      const result = await disconnect()
+      expect(result.success).toBe(true)
+    })
+
+    it('should succeed when killall and ps both fail', async () => {
+      // which → found, disconnect → success, logout → error, killall → error, ps → error
+      mockExecFileSequence([
+        { stdout: '/usr/local/bin/octelium' },
+        { stdout: 'Disconnected' },
+        { error: 'not logged in' },
+        { error: 'No matching processes' },
+        { error: 'ps command not found' }
+      ])
+
+      const result = await disconnect()
+      expect(result.success).toBe(true)
     })
 
     it('should succeed when octelium is not installed', async () => {
