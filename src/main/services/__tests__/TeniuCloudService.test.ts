@@ -2,8 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock child_process
 const mockExecFile = vi.fn()
+const mockSpawn = vi.fn()
 vi.mock('node:child_process', () => ({
-  execFile: (...args: any[]) => mockExecFile(...args)
+  execFile: (...args: any[]) => mockExecFile(...args),
+  spawn: (...args: any[]) => mockSpawn(...args)
 }))
 
 vi.mock('@logger', () => ({
@@ -23,7 +25,8 @@ vi.mock('@shared/config/constant', () => ({
 
 vi.mock('../AuthService', () => ({
   authService: {
-    getSessionCookie: vi.fn(() => 'test-session-cookie')
+    getSessionCookie: vi.fn(() => 'test-session-cookie'),
+    getUserId: vi.fn(() => 1)
   }
 }))
 
@@ -61,7 +64,9 @@ function mockExecFileSequence(results: Array<{ stdout?: string; stderr?: string;
   )
 }
 
-const { resolveServiceName, installOctelium, connect, disconnect } = await import('../TeniuCloudService')
+const { resolveServiceName, installOctelium, connect, disconnect, getDeviceTokenKey } = await import(
+  '../TeniuCloudService'
+)
 
 describe('TeniuCloudService', () => {
   beforeEach(() => {
@@ -170,86 +175,60 @@ describe('TeniuCloudService', () => {
     })
   })
 
-  describe('connect (execFile with --serve)', () => {
-    it('should connect with --serve when serviceName is provided', async () => {
-      // which octelium → found, connect → success, which octelium → found, status → connected
+  describe('connect (spawn detached)', () => {
+    it('should spawn connect with --serve when serviceName is provided', async () => {
+      // which octelium → found (for isOcteliumInstalled)
+      // Then spawn is called for connect (detached, no callback)
+      // Then which → found, status → connected (for verification)
       mockExecFileSequence([
         { stdout: '/usr/local/bin/octelium' },
-        { stdout: 'Connected' },
         { stdout: '/usr/local/bin/octelium' },
         { stdout: 'cluster: teniuapi.cloud\nsession: abc\nuser: admin' }
       ])
+
+      const mockChild = { on: vi.fn(), unref: vi.fn() }
+      mockSpawn.mockReturnValue(mockChild)
 
       const result = await connect('https://teniuapi.cloud', 'test-auth-token', 'admin-prd12test02')
       expect(result.success).toBe(true)
 
-      // Verify the connect command includes --serve
-      const connectCall = mockExecFile.mock.calls.find(
-        (call: any[]) => call[0] === 'octelium' && call[1]?.includes('connect')
+      // Verify spawn was called with correct args
+      expect(mockSpawn).toHaveBeenCalledWith(
+        'octelium',
+        expect.arrayContaining(['connect', '--serve', 'admin-prd12test02', '--auth-token', 'test-auth-token']),
+        expect.objectContaining({ detached: true, stdio: 'ignore' })
       )
-      expect(connectCall).toBeDefined()
-      expect(connectCall![1]).toContain('--serve')
-      expect(connectCall![1]).toContain('admin-prd12test02')
-      expect(connectCall![1]).toContain('--auth-token')
-      expect(connectCall![1]).toContain('test-auth-token')
+      expect(mockChild.unref).toHaveBeenCalled()
     })
 
-    it('should connect without --serve when no serviceName', async () => {
-      // which → found, connect → success, which → found, status → connected
+    it('should spawn connect without --serve when no serviceName', async () => {
       mockExecFileSequence([
         { stdout: '/usr/local/bin/octelium' },
-        { stdout: 'Connected' },
         { stdout: '/usr/local/bin/octelium' },
         { stdout: 'cluster: teniuapi.cloud\nsession: abc\nuser: admin' }
       ])
+
+      const mockChild = { on: vi.fn(), unref: vi.fn() }
+      mockSpawn.mockReturnValue(mockChild)
 
       const result = await connect('https://teniuapi.cloud', 'test-auth-token')
       expect(result.success).toBe(true)
 
-      const connectCall = mockExecFile.mock.calls.find(
-        (call: any[]) => call[0] === 'octelium' && call[1]?.includes('connect')
-      )
-      expect(connectCall![1]).not.toContain('--serve')
+      const spawnArgs = mockSpawn.mock.calls[0][1]
+      expect(spawnArgs).not.toContain('--serve')
     })
 
-    it('should return error when connect command fails', async () => {
-      // which → found, connect → fail
-      mockExecFileSequence([{ stdout: '/usr/local/bin/octelium' }, { error: 'connection refused' }])
+    it('should return error when octelium is not installed and install fails', async () => {
+      // which → not found, brew → not found
+      mockExecFileError('not found')
 
       const result = await connect('https://teniuapi.cloud', 'test-auth-token', 'admin-prd12test02')
       expect(result.success).toBe(false)
-      expect(result.error).toContain('Connect failed')
     })
   })
 
   describe('disconnect', () => {
-    it('should use --serve flag when serviceName is provided', async () => {
-      // which → found, disconnect --serve → success
-      mockExecFileSequence([{ stdout: '/usr/local/bin/octelium' }, { stdout: 'Disconnected' }])
-
-      const result = await disconnect('admin-prd12test02')
-      expect(result.success).toBe(true)
-
-      const disconnectCall = mockExecFile.mock.calls.find(
-        (call: any[]) => call[0] === 'octelium' && call[1]?.includes('disconnect')
-      )
-      expect(disconnectCall![1]).toContain('--serve')
-      expect(disconnectCall![1]).toContain('admin-prd12test02')
-    })
-
-    it('should fall back to bare disconnect when --serve fails', async () => {
-      // which → found, disconnect --serve → fail, disconnect → success
-      mockExecFileSequence([
-        { stdout: '/usr/local/bin/octelium' },
-        { error: 'unknown flag: --serve' },
-        { stdout: 'Disconnected' }
-      ])
-
-      const result = await disconnect('admin-prd12test02')
-      expect(result.success).toBe(true)
-    })
-
-    it('should use bare disconnect when no serviceName provided', async () => {
+    it('should run bare disconnect', async () => {
       // which → found, disconnect → success
       mockExecFileSequence([{ stdout: '/usr/local/bin/octelium' }, { stdout: 'Disconnected' }])
 
@@ -259,7 +238,7 @@ describe('TeniuCloudService', () => {
       const disconnectCall = mockExecFile.mock.calls.find(
         (call: any[]) => call[0] === 'octelium' && call[1]?.includes('disconnect')
       )
-      expect(disconnectCall![1]).not.toContain('--serve')
+      expect(disconnectCall![1]).toEqual(['disconnect'])
     })
 
     it('should succeed when octelium is not installed', async () => {
@@ -267,6 +246,94 @@ describe('TeniuCloudService', () => {
 
       const result = await disconnect()
       expect(result.success).toBe(true)
+    })
+  })
+
+  describe('getDeviceTokenKey', () => {
+    const mockFetch = vi.fn()
+
+    beforeEach(() => {
+      vi.stubGlobal('fetch', mockFetch)
+    })
+
+    afterEach(() => {
+      vi.unstubAllGlobals()
+    })
+
+    it('should return token key on success', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, data: { token: 'full-plaintext-token-123' } })
+      })
+
+      const result = await getDeviceTokenKey(1)
+      expect(result.success).toBe(true)
+      expect(result.token).toBe('full-plaintext-token-123')
+    })
+
+    it('should handle key field in response data', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, data: { key: 'token-from-key-field' } })
+      })
+
+      const result = await getDeviceTokenKey(2)
+      expect(result.success).toBe(true)
+      expect(result.token).toBe('token-from-key-field')
+    })
+
+    it('should return error on 401 unauthorized', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 401
+      })
+
+      const result = await getDeviceTokenKey(1)
+      expect(result.success).toBe(false)
+      expect(result.error).toContain('Session expired')
+    })
+
+    it('should return error on HTTP failure', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 500
+      })
+
+      const result = await getDeviceTokenKey(1)
+      expect(result.success).toBe(false)
+      expect(result.error).toBe('HTTP 500')
+    })
+
+    it('should return error when not logged in', async () => {
+      // Override the mock to return null cookie
+      const { authService } = await import('../AuthService')
+      vi.mocked(authService.getSessionCookie).mockReturnValueOnce(null)
+
+      const result = await getDeviceTokenKey(1)
+      expect(result.success).toBe(false)
+      expect(result.error).toContain('Not logged in')
+    })
+
+    it('should return error when API returns success=false', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: false, message: 'Device not found' })
+      })
+
+      const result = await getDeviceTokenKey(999)
+      expect(result.success).toBe(false)
+      expect(result.error).toBe('Device not found')
+    })
+
+    it('should return error when token is missing from response', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, data: {} })
+      })
+
+      const result = await getDeviceTokenKey(1)
+      expect(result.success).toBe(false)
+      expect(result.error).toContain('Token key not found')
     })
   })
 })

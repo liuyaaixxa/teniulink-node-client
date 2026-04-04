@@ -65,6 +65,7 @@ export enum IpcChannel {
   TeniuCloud_GetLocalModels = 'teniu-cloud:get-local-models',
   TeniuCloud_InstallOctelium = 'teniu-cloud:install-octelium',
   TeniuCloud_GetDeviceTokens = 'teniu-cloud:get-device-tokens',
+  TeniuCloud_GetDeviceTokenKey = 'teniu-cloud:get-device-token-key',
 
   Notification_Send = 'notification:send',
   Notification_OnClick = 'notification:on-click',

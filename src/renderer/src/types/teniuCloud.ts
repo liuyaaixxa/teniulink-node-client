@@ -5,6 +5,7 @@ export type TeniuCloudConfig = {
   apiKey: string
   connectionStatus: TeniuCloudConnectionStatus
   serviceName: string
+  selectedDeviceId: number | null
 }
 
 export const TENIU_CLOUD_DEFAULTS = {

@@ -64,7 +64,8 @@ const LoginPage: FC = () => {
             setAuthLogin({
               username: result.user?.username || values.username,
               token: result.token,
-              loginTime: new Date().toISOString()
+              loginTime: new Date().toISOString(),
+              userId: result.user?.userId
             })
           )
         } else {

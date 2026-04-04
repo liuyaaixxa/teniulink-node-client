@@ -153,7 +153,7 @@ const api = {
     username: string,
     password: string,
     apiBase?: string
-  ): Promise<{ success: boolean; token?: string; user?: { username: string }; error?: string }> =>
+  ): Promise<{ success: boolean; token?: string; user?: { username: string; userId?: number }; error?: string }> =>
     ipcRenderer.invoke(IpcChannel.Auth_Login, username, password, apiBase),
   authLogout: (): Promise<{ success: boolean; error?: string }> => ipcRenderer.invoke(IpcChannel.Auth_Logout),
   authCheckAuth: (token?: string): Promise<{ valid: boolean; error?: string }> =>
@@ -165,8 +165,8 @@ const api = {
     serviceName?: string
   ): Promise<{ success: boolean; error?: string }> =>
     ipcRenderer.invoke(IpcChannel.TeniuCloud_Connect, apiUrl, apiKey, serviceName),
-  teniuCloudDisconnect: (serviceName?: string): Promise<{ success: boolean; error?: string }> =>
-    ipcRenderer.invoke(IpcChannel.TeniuCloud_Disconnect, serviceName),
+  teniuCloudDisconnect: (): Promise<{ success: boolean; error?: string }> =>
+    ipcRenderer.invoke(IpcChannel.TeniuCloud_Disconnect),
   teniuCloudCheckStatus: (): Promise<{ connected: boolean; error?: string }> =>
     ipcRenderer.invoke(IpcChannel.TeniuCloud_CheckStatus),
   teniuCloudGetLocalModels: (): Promise<{
@@ -185,11 +185,20 @@ const api = {
   }> => ipcRenderer.invoke(IpcChannel.TeniuCloud_GetLocalModels),
   teniuCloudInstallOctelium: (): Promise<{ success: boolean; error?: string }> =>
     ipcRenderer.invoke(IpcChannel.TeniuCloud_InstallOctelium),
-  teniuCloudGetDeviceTokens: (): Promise<{
+  teniuCloudGetDeviceTokens: (
+    sessionToken?: string,
+    userId?: number
+  ): Promise<{
     success: boolean
     tokens: Array<{ id: number; name: string; tokenMask: string; domain: string; status: number }>
     error?: string
-  }> => ipcRenderer.invoke(IpcChannel.TeniuCloud_GetDeviceTokens),
+  }> => ipcRenderer.invoke(IpcChannel.TeniuCloud_GetDeviceTokens, sessionToken, userId),
+  teniuCloudGetDeviceTokenKey: (
+    deviceId: number,
+    sessionToken?: string,
+    userId?: number
+  ): Promise<{ success: boolean; token?: string; error?: string }> =>
+    ipcRenderer.invoke(IpcChannel.TeniuCloud_GetDeviceTokenKey, deviceId, sessionToken, userId),
   mac: {
     isProcessTrusted: (): Promise<boolean> => ipcRenderer.invoke(IpcChannel.App_MacIsProcessTrusted),
     requestProcessTrust: (): Promise<boolean> => ipcRenderer.invoke(IpcChannel.App_MacRequestProcessTrust)

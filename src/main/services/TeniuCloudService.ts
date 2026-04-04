@@ -1,4 +1,4 @@
-import { execFile } from 'node:child_process'
+import { execFile, spawn } from 'node:child_process'
 
 import { loggerService } from '@logger'
 import { API_SERVER_DEFAULTS } from '@shared/config/constant'
@@ -197,12 +197,10 @@ export async function installOctelium(): Promise<CommandResult> {
   }
 }
 
-const CONNECT_TIMEOUT_MS = 60000
-
 /**
  * Connect to Teniu Cloud using octelium connect command.
  * Uses: octelium connect --serve "{serviceName}" --domain {domain} --auth-token {apiKey}
- * The --serve flag registers the connection as a named service.
+ * The connect process is long-running (keeps tunnel alive), so we spawn it detached.
  */
 export async function connect(apiUrl: string, apiKey: string, serviceName?: string): Promise<CommandResult> {
   try {
@@ -214,7 +212,6 @@ export async function connect(apiUrl: string, apiKey: string, serviceName?: stri
       if (!installResult.success) {
         return installResult
       }
-      // Verify install succeeded
       installed = await isOcteliumInstalled()
       if (!installed) {
         return { success: false, error: 'octelium installation completed but binary not found in PATH' }
@@ -224,8 +221,6 @@ export async function connect(apiUrl: string, apiKey: string, serviceName?: stri
     const domain = extractDomain(apiUrl)
     logger.info(`Connecting to Teniu Cloud: ${domain}${serviceName ? ` (serve: ${serviceName})` : ''}`)
 
-    const octeliumEnv = getOcteliumEnv(domain)
-
     // Build connect args: octelium connect --serve "name" --domain X --auth-token Y
     const connectArgs = ['connect']
     if (serviceName) {
@@ -233,22 +228,28 @@ export async function connect(apiUrl: string, apiKey: string, serviceName?: stri
     }
     connectArgs.push('--domain', domain, '--auth-token', apiKey)
 
-    try {
-      const connectResult = await executeCommand('octelium', connectArgs, CONNECT_TIMEOUT_MS, octeliumEnv)
-      logger.info(`Connect output: ${connectResult.stdout.trim() || connectResult.stderr.trim() || 'Started'}`)
-    } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : String(error)
-      logger.error('Connect failed:', error as Error)
-      return { success: false, error: `Connect failed: ${errorMsg}` }
-    }
+    logger.debug(`Spawning: octelium ${connectArgs.join(' ')}`)
 
-    // Verify connection
-    await new Promise((resolve) => setTimeout(resolve, 2000))
+    // Spawn as detached background process — octelium connect is long-running
+    const child = spawn('octelium', connectArgs, {
+      detached: true,
+      stdio: 'ignore',
+      env: { ...process.env, ...getOcteliumEnv(domain) }
+    })
+
+    child.on('error', (err) => {
+      logger.error('octelium connect spawn error:', err)
+    })
+
+    child.unref()
+
+    // Wait a few seconds for connection to establish, then verify
+    await new Promise((resolve) => setTimeout(resolve, 3000))
     const status = await checkStatusWithEnv(domain)
     if (status.connected) {
       logger.info('Successfully connected to Teniu Cloud')
     } else {
-      logger.warn('Connection verification failed, but command completed')
+      logger.warn('Connection started but status check inconclusive — tunnel may still be initializing')
     }
 
     return { success: true }
@@ -261,9 +262,9 @@ export async function connect(apiUrl: string, apiKey: string, serviceName?: stri
 
 /**
  * Disconnect from Teniu Cloud
- * Uses: octelium disconnect --serve "{serviceName}" when available
+ * Uses: octelium disconnect
  */
-export async function disconnect(serviceName?: string): Promise<CommandResult> {
+export async function disconnect(): Promise<CommandResult> {
   try {
     const installed = await isOcteliumInstalled()
     if (!installed) {
@@ -272,26 +273,6 @@ export async function disconnect(serviceName?: string): Promise<CommandResult> {
 
     logger.info('Disconnecting from Teniu Cloud')
 
-    // Try disconnect with --serve flag if serviceName is provided
-    if (serviceName) {
-      try {
-        logger.info(`Disconnecting service: ${serviceName}`)
-        const result = await executeCommand(
-          'octelium',
-          ['disconnect', '--serve', serviceName],
-          COMMAND_TIMEOUT_MS,
-          getOcteliumEnv()
-        )
-        logger.info(`Disconnect output: ${result.stdout.trim() || result.stderr.trim() || 'Done'}`)
-        return { success: true }
-      } catch (error) {
-        const errorMsg = error instanceof Error ? error.message : String(error)
-        logger.warn(`Disconnect with --serve failed: ${errorMsg}, trying bare disconnect`)
-        // Fall through to bare disconnect
-      }
-    }
-
-    // Bare disconnect fallback
     try {
       const result = await executeCommand('octelium', ['disconnect'], COMMAND_TIMEOUT_MS, getOcteliumEnv())
       logger.info(`Disconnect output: ${result.stdout.trim() || result.stderr.trim() || 'Done'}`)
@@ -369,11 +350,12 @@ async function checkStatusWithEnv(domain?: string): Promise<ConnectionStatus> {
 
 /**
  * Get device tokens from Teniu Cloud backend API
- * Uses the session cookie from AuthService for authentication
+ * Accepts an optional sessionToken from the renderer (preferred), falls back to AuthService cookie
  */
-export async function getDeviceTokens(): Promise<DeviceTokensResult> {
+export async function getDeviceTokens(sessionToken?: string, userId?: number): Promise<DeviceTokensResult> {
   try {
-    const cookie = authService.getSessionCookie()
+    const authCookie = authService.getSessionCookie()
+    const cookie = sessionToken || authCookie
     if (!cookie) {
       return { success: false, tokens: [], error: 'Not logged in. Please login first.' }
     }
@@ -381,14 +363,20 @@ export async function getDeviceTokens(): Promise<DeviceTokensResult> {
     const apiBase = DEFAULT_API_BASE
     const url = `${apiBase}/api/device-token/?p=1&size=100`
 
-    logger.debug(`Fetching device tokens from ${url}`)
+    const uid = userId || authService.getUserId()
+    logger.debug(`Fetching device tokens from ${url} (userId=${uid})`)
+
+    const headers: Record<string, string> = {
+      Cookie: `session=${cookie}`,
+      'Content-Type': 'application/json'
+    }
+    if (uid) {
+      headers['New-Api-User'] = String(uid)
+    }
 
     const response = await fetch(url, {
       method: 'GET',
-      headers: {
-        Cookie: `session=${cookie}`,
-        'Content-Type': 'application/json'
-      }
+      headers
     })
 
     if (!response.ok) {
@@ -419,6 +407,67 @@ export async function getDeviceTokens(): Promise<DeviceTokensResult> {
     const errorMessage = error instanceof Error ? error.message : String(error)
     logger.error('Failed to fetch device tokens:', error as Error)
     return { success: false, tokens: [], error: errorMessage }
+  }
+}
+
+/**
+ * Get the full plaintext token key for a specific device token
+ * Accepts an optional sessionToken from the renderer (preferred), falls back to AuthService cookie
+ */
+export async function getDeviceTokenKey(
+  deviceId: number,
+  sessionToken?: string,
+  userId?: number
+): Promise<{ success: boolean; token?: string; error?: string }> {
+  try {
+    const cookie = sessionToken || authService.getSessionCookie()
+    if (!cookie) {
+      return { success: false, error: 'Not logged in. Please login first.' }
+    }
+
+    const apiBase = DEFAULT_API_BASE
+    const url = `${apiBase}/api/device-token/${deviceId}/key`
+
+    const uid = userId || authService.getUserId()
+    logger.debug(`Fetching device token key for device ${deviceId} (userId=${uid})`)
+
+    const headers: Record<string, string> = {
+      Cookie: `session=${cookie}`,
+      'Content-Type': 'application/json'
+    }
+    if (uid) {
+      headers['New-Api-User'] = String(uid)
+    }
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers
+    })
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        return { success: false, error: 'Session expired. Please login again.' }
+      }
+      return { success: false, error: `HTTP ${response.status}` }
+    }
+
+    const json = await response.json()
+
+    if (!json.success) {
+      return { success: false, error: json.message || 'Failed to fetch device token key' }
+    }
+
+    const token = json.data?.token || json.data?.key
+    if (!token) {
+      return { success: false, error: 'Token key not found in response' }
+    }
+
+    logger.info(`Successfully fetched token key for device ${deviceId}`)
+    return { success: true, token }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    logger.error('Failed to fetch device token key:', error as Error)
+    return { success: false, error: errorMessage }
   }
 }
 
@@ -547,6 +596,7 @@ export const teniuCloudService = {
   getLocalModels,
   installOctelium,
   getDeviceTokens,
+  getDeviceTokenKey,
   resolveServiceName
 }
 

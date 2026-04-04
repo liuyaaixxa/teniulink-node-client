@@ -9,7 +9,7 @@ const LOGIN_TIMEOUT = 15000
 interface LoginResult {
   success: boolean
   token?: string
-  user?: { username: string; displayName?: string }
+  user?: { username: string; displayName?: string; userId?: number }
   error?: string
 }
 
@@ -19,6 +19,7 @@ interface CheckAuthResult {
 }
 
 let sessionCookie: string | null = null
+let userId: number | null = null
 
 async function login(username: string, password: string, apiBase?: string): Promise<LoginResult> {
   const base = apiBase || DEFAULT_API_BASE
@@ -58,11 +59,12 @@ async function login(username: string, password: string, apiBase?: string): Prom
     }
 
     const userData = json.data || {}
-    logger.info('Login successful', { username: userData.username })
+    userId = userData.id || null
+    logger.info('Login successful', { username: userData.username, userId })
     return {
       success: true,
       token: sessionCookie || '',
-      user: { username: userData.username || username, displayName: userData.display_name }
+      user: { username: userData.username || username, displayName: userData.display_name, userId: userData.id }
     }
   } catch (error: any) {
     if (error.name === 'AbortError') {
@@ -77,6 +79,7 @@ async function login(username: string, password: string, apiBase?: string): Prom
 async function logout(): Promise<{ success: boolean; error?: string }> {
   logger.info('Logging out')
   sessionCookie = null
+  userId = null
   return { success: true }
 }
 
@@ -92,9 +95,14 @@ function getSessionCookie(): string | null {
   return sessionCookie
 }
 
+function getUserId(): number | null {
+  return userId
+}
+
 export const authService = {
   login,
   logout,
   checkAuth,
-  getSessionCookie
+  getSessionCookie,
+  getUserId
 }

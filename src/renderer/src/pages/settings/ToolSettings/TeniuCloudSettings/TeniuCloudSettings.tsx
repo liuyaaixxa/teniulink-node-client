@@ -3,17 +3,17 @@ import { loggerService } from '@renderer/services/LoggerService'
 import type { RootState } from '@renderer/store'
 import { useAppDispatch } from '@renderer/store'
 import {
-  setTeniuCloudApiKey,
   setTeniuCloudApiUrl,
   setTeniuCloudConnectionStatus,
+  setTeniuCloudSelectedDeviceId,
   setTeniuCloudServiceName
 } from '@renderer/store/settings'
 import type { TeniuCloudConnectionStatus } from '@renderer/types'
 import { TENIU_CLOUD_DEFAULTS } from '@renderer/types/teniuCloud'
-import { Button, Input, Modal, Spin, Typography } from 'antd'
-import { ChevronLeft, ChevronRight, CloudOff, Link, RefreshCw, Search, Server, Unlink } from 'lucide-react'
+import { Button, Input, Modal, Select, Spin, Typography } from 'antd'
+import { ChevronLeft, ChevronRight, CloudOff, Copy, Link, RefreshCw, Search, Server, Unlink } from 'lucide-react'
 import type { FC } from 'react'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSelector } from 'react-redux'
 import styled from 'styled-components'
@@ -42,6 +42,14 @@ interface LocalModelsState {
 
 const PAGE_SIZE = 10
 
+interface DeviceToken {
+  id: number
+  name: string
+  tokenMask: string
+  domain: string
+  status: number
+}
+
 const TeniuCloudSettings: FC = () => {
   const { theme } = useTheme()
   const dispatch = useAppDispatch()
@@ -51,12 +59,15 @@ const TeniuCloudSettings: FC = () => {
     apiUrl: TENIU_CLOUD_DEFAULTS.API_URL,
     apiKey: '',
     connectionStatus: 'disconnected' as TeniuCloudConnectionStatus,
-    serviceName: ''
+    serviceName: '',
+    selectedDeviceId: null
   }
   const authState = useSelector((state: RootState) => state.settings.auth)
 
   const [isLoading, setIsLoading] = useState(false)
   const [installStatus, setInstallStatus] = useState<string | null>(null)
+  const [deviceTokens, setDeviceTokens] = useState<DeviceToken[]>([])
+  const [isLoadingDevices, setIsLoadingDevices] = useState(false)
   const [localModels, setLocalModels] = useState<LocalModelsState>({
     models: [],
     total: 0,
@@ -68,11 +79,36 @@ const TeniuCloudSettings: FC = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
 
+  const fetchDeviceTokens = useCallback(async () => {
+    if (!authState?.isLoggedIn) return
+    setIsLoadingDevices(true)
+    try {
+      const result = await window.api.teniuCloudGetDeviceTokens(
+        authState.token || undefined,
+        authState.userId ?? undefined
+      )
+      if (result.success) {
+        setDeviceTokens(result.tokens.filter((t) => t.status === 1))
+      } else {
+        logger.warn(`Failed to fetch device tokens: ${result.error}`)
+      }
+    } catch (error) {
+      logger.error('Failed to fetch device tokens:', error as Error)
+    } finally {
+      setIsLoadingDevices(false)
+    }
+  }, [authState?.isLoggedIn, authState?.token, authState?.userId])
+
   // Check connection status on mount
   useEffect(() => {
     void checkConnectionStatus()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Fetch device tokens when logged in
+  useEffect(() => {
+    void fetchDeviceTokens()
+  }, [fetchDeviceTokens])
 
   // Fetch local models on mount
   useEffect(() => {
@@ -145,12 +181,12 @@ const TeniuCloudSettings: FC = () => {
     dispatch(setTeniuCloudApiUrl(value))
   }
 
-  const handleApiKeyChange = (value: string) => {
-    dispatch(setTeniuCloudApiKey(value))
+  const handleDeviceChange = (deviceId: number) => {
+    dispatch(setTeniuCloudSelectedDeviceId(deviceId))
   }
 
   const handleConnect = async () => {
-    if (!teniuCloudConfig.apiUrl || !teniuCloudConfig.apiKey) {
+    if (!teniuCloudConfig.apiUrl || !teniuCloudConfig.selectedDeviceId) {
       window.toast.warning(t('teniuCloud.messages.configRequired'))
       return
     }
@@ -160,38 +196,33 @@ const TeniuCloudSettings: FC = () => {
     dispatch(setTeniuCloudConnectionStatus('connecting'))
 
     try {
-      // Step 1: Resolve service name BEFORE connecting
-      let serviceName: string | undefined
-      try {
-        const tokensResult = await window.api.teniuCloudGetDeviceTokens()
-        if (tokensResult.success && tokensResult.tokens.length > 0 && authState?.username) {
-          const apiKey = teniuCloudConfig.apiKey
-          const keyPrefix = apiKey.substring(0, 4)
-          const keySuffix = apiKey.substring(apiKey.length - 4)
-
-          const matched = tokensResult.tokens.find((token) => {
-            if (!token.tokenMask) return false
-            return (
-              token.tokenMask.substring(0, 4) === keyPrefix &&
-              token.tokenMask.substring(token.tokenMask.length - 4) === keySuffix
-            )
-          })
-
-          const deviceName = matched?.name || tokensResult.tokens.find((tk) => tk.status === 1)?.name
-          if (deviceName) {
-            serviceName = `${authState.username}-${deviceName}`
-              .replace(/[\s_]+/g, '-')
-              .toLowerCase()
-              .substring(0, 64)
-            logger.info(`Service name resolved: ${serviceName}`)
-          }
-        }
-      } catch (error) {
-        logger.warn('Failed to resolve service name, connecting without --serve:', error as Error)
+      // Step 1: Fetch full token key for selected device
+      const tokenResult = await window.api.teniuCloudGetDeviceTokenKey(
+        teniuCloudConfig.selectedDeviceId,
+        authState?.token || undefined,
+        authState?.userId ?? undefined
+      )
+      if (!tokenResult.success || !tokenResult.token) {
+        dispatch(setTeniuCloudConnectionStatus('disconnected'))
+        showErrorModal(tokenResult.error || 'Failed to fetch device token')
+        return
       }
 
-      // Step 2: Connect with --serve "{serviceName}"
-      const result = await window.api.teniuCloudConnect(teniuCloudConfig.apiUrl, teniuCloudConfig.apiKey, serviceName)
+      const fullToken = tokenResult.token
+
+      // Step 2: Resolve service name from selected device
+      const selectedDevice = deviceTokens.find((d) => d.id === teniuCloudConfig.selectedDeviceId)
+      let serviceName: string | undefined
+      if (selectedDevice && authState?.username) {
+        serviceName = `${authState.username}-${selectedDevice.name}`
+          .replace(/[\s_]+/g, '-')
+          .toLowerCase()
+          .substring(0, 64)
+        logger.info(`Service name resolved: ${serviceName}`)
+      }
+
+      // Step 3: Connect with full token and --serve "{serviceName}"
+      const result = await window.api.teniuCloudConnect(teniuCloudConfig.apiUrl, fullToken, serviceName)
 
       if (result.success) {
         dispatch(setTeniuCloudConnectionStatus('connected'))
@@ -216,7 +247,7 @@ const TeniuCloudSettings: FC = () => {
     setIsLoading(true)
 
     try {
-      const result = await window.api.teniuCloudDisconnect(teniuCloudConfig.serviceName || undefined)
+      const result = await window.api.teniuCloudDisconnect()
 
       if (result.success) {
         dispatch(setTeniuCloudConnectionStatus('disconnected'))
@@ -252,6 +283,21 @@ const TeniuCloudSettings: FC = () => {
 
   const isConnected = teniuCloudConfig.connectionStatus === 'connected'
   const isConnecting = teniuCloudConfig.connectionStatus === 'connecting'
+
+  // Compute service URL: https://{serviceName}.{domain}
+  const serviceUrl = useMemo(() => {
+    if (!isConnected || !teniuCloudConfig.serviceName) return null
+    const selectedDevice = deviceTokens.find((d) => d.id === teniuCloudConfig.selectedDeviceId)
+    const domain = selectedDevice?.domain || 'teniuapi.cloud'
+    return `https://${teniuCloudConfig.serviceName}.${domain}`
+  }, [isConnected, teniuCloudConfig.serviceName, teniuCloudConfig.selectedDeviceId, deviceTokens])
+
+  const handleCopyUrl = useCallback(() => {
+    if (serviceUrl) {
+      navigator.clipboard.writeText(serviceUrl)
+      window.toast.success(t('teniuCloud.messages.urlCopied'))
+    }
+  }, [serviceUrl, t])
 
   return (
     <Container theme={theme}>
@@ -289,9 +335,16 @@ const TeniuCloudSettings: FC = () => {
                   : t('teniuCloud.status.disconnected')}
             </StatusLabel>
             <StatusValue>
-              {isConnected && teniuCloudConfig.serviceName
-                ? `${teniuCloudConfig.apiUrl} · ${teniuCloudConfig.serviceName}`
-                : teniuCloudConfig.apiUrl || t('teniuCloud.status.configurePrompt')}
+              {isConnected && serviceUrl ? (
+                <ServiceUrlRow>
+                  <ServiceUrlText>{serviceUrl}</ServiceUrlText>
+                  <CopyButton onClick={handleCopyUrl} title={t('teniuCloud.actions.copyUrl')}>
+                    <Copy size={12} />
+                  </CopyButton>
+                </ServiceUrlRow>
+              ) : (
+                teniuCloudConfig.apiUrl || t('teniuCloud.status.configurePrompt')
+              )}
             </StatusValue>
           </StatusInfo>
           <ControlSection>
@@ -330,14 +383,29 @@ const TeniuCloudSettings: FC = () => {
             />
           </FieldGroup>
           <FieldGroup>
-            <FieldLabel>{t('teniuCloud.fields.apiKey.label')}</FieldLabel>
-            <StyledInput
-              value={teniuCloudConfig.apiKey}
-              onChange={(e) => handleApiKeyChange(e.target.value)}
-              placeholder={t('teniuCloud.fields.apiKey.placeholder')}
-              size="middle"
-              type="password"
+            <DeviceLabelRow>
+              <FieldLabel>{t('teniuCloud.fields.device.label')}</FieldLabel>
+              <DeviceRefreshButton onClick={() => void fetchDeviceTokens()} disabled={isLoadingDevices}>
+                {isLoadingDevices ? <Spin size="small" /> : <RefreshCw size={12} />}
+              </DeviceRefreshButton>
+            </DeviceLabelRow>
+            <StyledSelect
+              value={teniuCloudConfig.selectedDeviceId}
+              onChange={(value) => handleDeviceChange(value as number)}
+              placeholder={t('teniuCloud.fields.device.placeholder')}
               disabled={isConnected}
+              loading={isLoadingDevices}
+              notFoundContent={
+                isLoadingDevices ? (
+                  <EmptySelectContent>{t('teniuCloud.fields.device.loading')}</EmptySelectContent>
+                ) : (
+                  <EmptySelectContent>{t('teniuCloud.fields.device.empty')}</EmptySelectContent>
+                )
+              }
+              options={deviceTokens.map((token) => ({
+                value: token.id,
+                label: `${token.name} (${token.tokenMask})`
+              }))}
             />
           </FieldGroup>
         </ConfigRow>
@@ -568,6 +636,35 @@ const StatusValue = styled.div`
   color: var(--color-text-3);
 `
 
+const ServiceUrlRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+`
+
+const ServiceUrlText = styled.span`
+  font-family: monospace;
+  font-size: 12px;
+  color: var(--color-primary);
+`
+
+const CopyButton = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--color-text-3);
+  transition: all 0.2s;
+
+  &:hover {
+    color: var(--color-primary);
+    background: var(--color-background-soft);
+  }
+`
+
 const ControlSection = styled.div`
   display: flex;
   align-items: center;
@@ -637,6 +734,44 @@ const StyledInput = styled(Input)`
   width: 100%;
   border-radius: 6px;
   border: 1.5px solid var(--color-border);
+`
+
+const StyledSelect = styled(Select)`
+  width: 100%;
+  .ant-select-selector {
+    border-radius: 6px !important;
+    border: 1.5px solid var(--color-border) !important;
+  }
+`
+
+const DeviceLabelRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+`
+
+const DeviceRefreshButton = styled.div<{ disabled?: boolean }>`
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  cursor: ${(props) => (props.disabled ? 'not-allowed' : 'pointer')};
+  color: var(--color-text-3);
+  transition: all 0.2s;
+  opacity: ${(props) => (props.disabled ? 0.6 : 1)};
+
+  &:hover {
+    color: var(--color-primary);
+  }
+`
+
+const EmptySelectContent = styled.div`
+  padding: 8px 0;
+  text-align: center;
+  font-size: 12px;
+  color: var(--color-text-3);
 `
 
 const InfoSection = styled.div`

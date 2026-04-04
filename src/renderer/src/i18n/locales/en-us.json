@@ -5540,6 +5540,7 @@
   "teniuCloud": {
     "actions": {
       "connect": "Connect",
+      "copyUrl": "Copy URL",
       "disconnect": "Disconnect"
     },
     "description": "Configure Teniu Cloud remote service connection",
@@ -5552,6 +5553,12 @@
       "apiUrl": {
         "description": "The API URL of Teniu Cloud service",
         "label": "API URL"
+      },
+      "device": {
+        "empty": "No devices found. Please create a device token first.",
+        "label": "Device",
+        "loading": "Loading devices...",
+        "placeholder": "Select device..."
       }
     },
     "info": {
@@ -5566,16 +5573,17 @@
       "title": "Local Models"
     },
     "messages": {
-      "configRequired": "Please configure API URL and API Key first",
+      "configRequired": "Please configure API URL and select a device first",
       "connectFailed": "Failed to connect to Teniu Cloud",
       "connectSuccess": "Connected to Teniu Cloud",
       "disconnectFailed": "Failed to disconnect from Teniu Cloud",
       "disconnectSuccess": "Disconnected from Teniu Cloud",
       "errorTitle": "Connection Error",
-      "saveSuccess": "Configuration saved"
+      "saveSuccess": "Configuration saved",
+      "urlCopied": "Service URL copied to clipboard"
     },
     "status": {
-      "configurePrompt": "Configure API URL and API Key to connect",
+      "configurePrompt": "Configure API URL and select a device to connect",
       "connected": "Connected",
       "connecting": "Connecting...",
       "disconnected": "Disconnected",

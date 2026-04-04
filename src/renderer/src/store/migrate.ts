@@ -3398,7 +3398,8 @@ const migrateConfig = {
           apiUrl: 'https://teniuapi.cloud',
           apiKey: '',
           connectionStatus: 'disconnected',
-          serviceName: ''
+          serviceName: '',
+          selectedDeviceId: null
         }
       }
       logger.info('migrate 206 success')
@@ -3418,6 +3419,32 @@ const migrateConfig = {
       return state
     } catch (error) {
       logger.error('migrate 207 error', error as Error)
+      return state
+    }
+  },
+  '208': (state: RootState) => {
+    try {
+      // Add selectedDeviceId to teniuCloud configuration
+      if (state.settings.teniuCloud) {
+        state.settings.teniuCloud.selectedDeviceId = null
+      }
+      logger.info('migrate 208 success')
+      return state
+    } catch (error) {
+      logger.error('migrate 208 error', error as Error)
+      return state
+    }
+  },
+  '209': (state: RootState) => {
+    try {
+      // Add userId to auth state
+      if (state.settings.auth) {
+        state.settings.auth.userId = null
+      }
+      logger.info('migrate 209 success')
+      return state
+    } catch (error) {
+      logger.error('migrate 209 error', error as Error)
       return state
     }
   }

@@ -5540,6 +5540,7 @@
   "teniuCloud": {
     "actions": {
       "connect": "連線",
+      "copyUrl": "複製位址",
       "disconnect": "中斷連線"
     },
     "description": "配置 Teniu雲 遠端服務連線",
@@ -5552,6 +5553,12 @@
       "apiUrl": {
         "description": "Teniu雲 服務的 API 位址",
         "label": "遠端位址"
+      },
+      "device": {
+        "empty": "暫無設備，請先建立設備令牌",
+        "label": "設備",
+        "loading": "載入設備中...",
+        "placeholder": "選擇設備..."
       }
     },
     "info": {
@@ -5566,16 +5573,17 @@
       "title": "[to be translated]:Local Models"
     },
     "messages": {
-      "configRequired": "請先設定 API 位址和存取金鑰",
+      "configRequired": "請先設定 API 位址並選擇設備",
       "connectFailed": "連線 Teniu雲 失敗",
       "connectSuccess": "已連線到 Teniu雲",
       "disconnectFailed": "中斷連線失敗",
       "disconnectSuccess": "已中斷與 Teniu雲 的連線",
       "errorTitle": "連線錯誤",
-      "saveSuccess": "設定已儲存"
+      "saveSuccess": "設定已儲存",
+      "urlCopied": "服務位址已複製到剪貼簿"
     },
     "status": {
-      "configurePrompt": "設定 API 位址和存取金鑰以連線",
+      "configurePrompt": "設定 API 位址並選擇設備以連線",
       "connected": "已連線",
       "connecting": "連線中...",
       "disconnected": "未連線",

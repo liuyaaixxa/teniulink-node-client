@@ -3,6 +3,7 @@ export interface AuthState {
   username: string
   loginTime: string
   token: string
+  userId: number | null
 }
 
 export interface LoginRequest {
@@ -15,6 +16,7 @@ export interface LoginResponse {
   token?: string
   user?: {
     username: string
+    userId?: number
   }
   error?: string
 }
@@ -23,5 +25,6 @@ export const AUTH_DEFAULTS: AuthState = {
   isLoggedIn: false,
   username: '',
   loginTime: '',
-  token: ''
+  token: '',
+  userId: null
 }

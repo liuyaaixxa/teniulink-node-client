@@ -465,7 +465,8 @@ export const initialState: SettingsState = {
     apiUrl: TENIU_CLOUD_DEFAULTS.API_URL,
     apiKey: '',
     connectionStatus: 'disconnected',
-    serviceName: ''
+    serviceName: '',
+    selectedDeviceId: null
   },
   showMessageOutline: false
 }
@@ -916,12 +917,16 @@ const settingsSlice = createSlice({
       }
     },
     // Auth actions
-    setAuthLogin: (state, action: PayloadAction<{ username: string; token: string; loginTime: string }>) => {
+    setAuthLogin: (
+      state,
+      action: PayloadAction<{ username: string; token: string; loginTime: string; userId?: number }>
+    ) => {
       state.auth = {
         isLoggedIn: true,
         username: action.payload.username,
         token: action.payload.token,
-        loginTime: action.payload.loginTime
+        loginTime: action.payload.loginTime,
+        userId: action.payload.userId ?? null
       }
     },
     setAuthLogout: (state) => {
@@ -950,6 +955,12 @@ const settingsSlice = createSlice({
       state.teniuCloud = {
         ...state.teniuCloud,
         serviceName: action.payload
+      }
+    },
+    setTeniuCloudSelectedDeviceId: (state, action: PayloadAction<number | null>) => {
+      state.teniuCloud = {
+        ...state.teniuCloud,
+        selectedDeviceId: action.payload
       }
     },
     setShowMessageOutline: (state, action: PayloadAction<boolean>) => {
@@ -1096,7 +1107,8 @@ export const {
   setTeniuCloudApiUrl,
   setTeniuCloudApiKey,
   setTeniuCloudConnectionStatus,
-  setTeniuCloudServiceName
+  setTeniuCloudServiceName,
+  setTeniuCloudSelectedDeviceId
 } = settingsSlice.actions
 
 export default settingsSlice.reducer

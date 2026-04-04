@@ -5540,6 +5540,7 @@
   "teniuCloud": {
     "actions": {
       "connect": "连接",
+      "copyUrl": "复制地址",
       "disconnect": "断开连接"
     },
     "description": "配置 Teniu云 远程服务连接",
@@ -5552,6 +5553,12 @@
       "apiUrl": {
         "description": "Teniu云 服务的 API 地址",
         "label": "远程地址"
+      },
+      "device": {
+        "empty": "暂无设备，请先创建设备令牌",
+        "label": "设备",
+        "loading": "加载设备中...",
+        "placeholder": "选择设备..."
       }
     },
     "info": {
@@ -5566,16 +5573,17 @@
       "title": "本地模型列表"
     },
     "messages": {
-      "configRequired": "请先配置 API 地址和访问秘钥",
+      "configRequired": "请先配置 API 地址并选择设备",
       "connectFailed": "连接 Teniu云 失败",
       "connectSuccess": "已连接到 Teniu云",
       "disconnectFailed": "断开连接失败",
       "disconnectSuccess": "已断开与 Teniu云 的连接",
       "errorTitle": "连接错误",
-      "saveSuccess": "配置已保存"
+      "saveSuccess": "配置已保存",
+      "urlCopied": "服务地址已复制到剪贴板"
     },
     "status": {
-      "configurePrompt": "配置 API 地址和访问秘钥以连接",
+      "configurePrompt": "配置 API 地址并选择设备以连接",
       "connected": "已连接",
       "connecting": "连接中...",
       "disconnected": "未连接",
