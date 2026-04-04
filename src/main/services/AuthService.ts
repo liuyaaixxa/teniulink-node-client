@@ -2,7 +2,8 @@ import { loggerService } from '@logger'
 
 const logger = loggerService.withContext('AuthService')
 
-const DEFAULT_API_BASE = 'http://localhost:3000'
+declare const __TENIU_CLOUD_API_BASE__: string
+const DEFAULT_API_BASE = __TENIU_CLOUD_API_BASE__
 const LOGIN_TIMEOUT = 15000
 
 interface LoginResult {

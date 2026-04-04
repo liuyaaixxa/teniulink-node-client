@@ -13,6 +13,7 @@ export default defineConfig({
       {
         extends: true,
         plugins: mainConfig.plugins,
+        define: mainConfig.define,
         resolve: {
           alias: mainConfig.resolve.alias
         },

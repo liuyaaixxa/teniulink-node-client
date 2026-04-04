@@ -18,6 +18,9 @@ const isProd = process.env.NODE_ENV === 'production'
 export default defineConfig({
   main: {
     plugins: [...visualizerPlugin('main')],
+    define: {
+      __TENIU_CLOUD_API_BASE__: JSON.stringify(process.env.TENIU_CLOUD_API_BASE || 'http://localhost:3000')
+    },
     resolve: {
       alias: {
         '@main': resolve('src/main'),
