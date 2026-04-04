@@ -1871,6 +1871,19 @@
     },
     "title": "LM Studio"
   },
+  "login_page": {
+    "brand_name_highlight": "[to be translated]:link",
+    "brand_name_prefix": "[to be translated]:Teniu",
+    "error_login_failed": "[to be translated]:Login failed",
+    "error_network": "[to be translated]:Network error, please check your connection",
+    "network_badge": "[to be translated]:Teniu Cloud Network",
+    "password_placeholder": "[to be translated]:Password",
+    "password_required": "[to be translated]:Please enter password",
+    "submit_button": "[to be translated]:Start Login",
+    "subtitle": "[to be translated]:Intelligent Gateway Node",
+    "username_placeholder": "[to be translated]:Username",
+    "username_required": "[to be translated]:Please enter username"
+  },
   "memory": {
     "actions": "Acțiuni",
     "add_failed": "Nu s-a putut adăuga amintirea",
