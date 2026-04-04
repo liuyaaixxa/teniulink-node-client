@@ -23,18 +23,43 @@ describe('AuthService', () => {
   })
 
   describe('login', () => {
-    it('should return success when API responds with token', async () => {
+    it('should return success when API responds with valid data', async () => {
+      const mockHeaders = new Headers()
+      mockHeaders.set('set-cookie', 'session=test-session-cookie; Path=/; HttpOnly')
       const mockResponse = {
         ok: true,
-        json: () => Promise.resolve({ token: 'test-token', user: { username: 'testuser' } }),
+        headers: mockHeaders,
+        json: () =>
+          Promise.resolve({
+            success: true,
+            message: '',
+            data: { username: 'testuser', display_name: 'Test User', id: 1, role: 1 }
+          }),
         text: () => Promise.resolve('')
       }
       vi.spyOn(globalThis, 'fetch').mockResolvedValue(mockResponse as any)
 
       const result = await authService.login('testuser', 'password123')
       expect(result.success).toBe(true)
-      expect(result.token).toBe('test-token')
       expect(result.user?.username).toBe('testuser')
+    })
+
+    it('should return error when API responds with success=false', async () => {
+      const mockResponse = {
+        ok: true,
+        headers: new Headers(),
+        json: () =>
+          Promise.resolve({
+            success: false,
+            message: '用户名或密码错误'
+          }),
+        text: () => Promise.resolve('')
+      }
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue(mockResponse as any)
+
+      const result = await authService.login('testuser', 'wrongpass')
+      expect(result.success).toBe(false)
+      expect(result.error).toBe('用户名或密码错误')
     })
 
     it('should return error when API responds with non-ok status', async () => {

@@ -8,7 +8,7 @@ const LOGIN_TIMEOUT = 15000
 interface LoginResult {
   success: boolean
   token?: string
-  user?: { username: string }
+  user?: { username: string; displayName?: string }
   error?: string
 }
 
@@ -17,7 +17,7 @@ interface CheckAuthResult {
   error?: string
 }
 
-let currentToken: string | null = null
+let sessionCookie: string | null = null
 
 async function login(username: string, password: string, apiBase?: string): Promise<LoginResult> {
   const base = apiBase || DEFAULT_API_BASE
@@ -27,7 +27,7 @@ async function login(username: string, password: string, apiBase?: string): Prom
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), LOGIN_TIMEOUT)
 
-    const response = await fetch(`${base}/api/auth/login`, {
+    const response = await fetch(`${base}/api/user/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password }),
@@ -42,14 +42,26 @@ async function login(username: string, password: string, apiBase?: string): Prom
       return { success: false, error: `Authentication failed (${response.status})` }
     }
 
-    const data = await response.json()
-    currentToken = data.token || data.access_token || null
+    const json = await response.json()
 
-    logger.info('Login successful', { username })
+    if (!json.success) {
+      logger.warn('Login rejected by server', { message: json.message })
+      return { success: false, error: json.message || 'Login failed' }
+    }
+
+    // Extract session cookie from Set-Cookie header
+    const setCookie = response.headers.get('set-cookie')
+    if (setCookie) {
+      const match = setCookie.match(/session=([^;]+)/)
+      sessionCookie = match ? match[1] : null
+    }
+
+    const userData = json.data || {}
+    logger.info('Login successful', { username: userData.username })
     return {
       success: true,
-      token: currentToken || '',
-      user: { username: data.user?.username || data.username || username }
+      token: sessionCookie || '',
+      user: { username: userData.username || username, displayName: userData.display_name }
     }
   } catch (error: any) {
     if (error.name === 'AbortError') {
@@ -63,12 +75,12 @@ async function login(username: string, password: string, apiBase?: string): Prom
 
 async function logout(): Promise<{ success: boolean; error?: string }> {
   logger.info('Logging out')
-  currentToken = null
+  sessionCookie = null
   return { success: true }
 }
 
 async function checkAuth(token?: string): Promise<CheckAuthResult> {
-  const tokenToCheck = token || currentToken
+  const tokenToCheck = token || sessionCookie
   if (!tokenToCheck) {
     return { valid: false, error: 'No token available' }
   }
