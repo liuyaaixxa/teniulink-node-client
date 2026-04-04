@@ -99,12 +99,6 @@ const TeniuCloudSettings: FC = () => {
     }
   }, [authState?.isLoggedIn, authState?.token, authState?.userId])
 
-  // Check connection status on mount
-  useEffect(() => {
-    void checkConnectionStatus()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
   // Fetch device tokens when logged in
   useEffect(() => {
     void fetchDeviceTokens()
@@ -142,16 +136,6 @@ const TeniuCloudSettings: FC = () => {
   useEffect(() => {
     setCurrentPage(1)
   }, [searchQuery])
-
-  const checkConnectionStatus = async () => {
-    try {
-      const result = await window.api.teniuCloudCheckStatus()
-      dispatch(setTeniuCloudConnectionStatus(result.connected ? 'connected' : 'disconnected'))
-    } catch (error) {
-      logger.error('Failed to check connection status:', error as Error)
-      dispatch(setTeniuCloudConnectionStatus('disconnected'))
-    }
-  }
 
   const fetchLocalModels = async () => {
     setLocalModels((prev) => ({ ...prev, isLoading: true, error: undefined }))
