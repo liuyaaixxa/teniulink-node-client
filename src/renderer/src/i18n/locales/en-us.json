@@ -1871,6 +1871,19 @@
     },
     "title": "LM Studio"
   },
+  "login_page": {
+    "brand_name_highlight": "link",
+    "brand_name_prefix": "Teniu",
+    "error_login_failed": "Login failed",
+    "error_network": "Network error, please check your connection",
+    "network_badge": "Teniu Cloud Network",
+    "password_placeholder": "Password",
+    "password_required": "Please enter password",
+    "submit_button": "Start Login",
+    "subtitle": "Intelligent Gateway Node",
+    "username_placeholder": "Username",
+    "username_required": "Please enter username"
+  },
   "memory": {
     "actions": "Actions",
     "add_failed": "Failed to add memory",

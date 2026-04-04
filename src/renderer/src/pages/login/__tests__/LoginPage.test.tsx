@@ -31,27 +31,33 @@ vi.mock('@renderer/store/settings', () => ({
   setAuthLogout: vi.fn()
 }))
 
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string) => key
+  })
+}))
+
 describe('LoginPage', () => {
   it('should render login form with username and password fields', async () => {
     const { default: LoginPage } = await import('../LoginPage')
     render(<LoginPage />)
 
-    expect(screen.getByPlaceholderText('Username')).toBeInTheDocument()
-    expect(screen.getByPlaceholderText('Password')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /connect node/i })).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('login_page.username_placeholder')).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('login_page.password_placeholder')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /login_page\.submit_button/i })).toBeInTheDocument()
   })
 
   it('should render brand name', async () => {
     const { default: LoginPage } = await import('../LoginPage')
     render(<LoginPage />)
 
-    expect(screen.getByText('link')).toBeInTheDocument()
+    expect(screen.getByText('login_page.brand_name_highlight')).toBeInTheDocument()
   })
 
   it('should render subtitle text', async () => {
     const { default: LoginPage } = await import('../LoginPage')
     render(<LoginPage />)
 
-    expect(screen.getByText('Intelligent Gateway Node')).toBeInTheDocument()
+    expect(screen.getByText('login_page.subtitle')).toBeInTheDocument()
   })
 })

@@ -4,6 +4,7 @@ import { Button, Form, Input, message } from 'antd'
 import { Lock, User } from 'lucide-react'
 import type { FC } from 'react'
 import { useCallback, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import styled, { keyframes } from 'styled-components'
 
 interface LoginFormValues {
@@ -51,6 +52,7 @@ const LoginPage: FC = () => {
   const [loading, setLoading] = useState(false)
   const dispatch = useAppDispatch()
   const [form] = Form.useForm<LoginFormValues>()
+  const { t } = useTranslation()
 
   const handleLogin = useCallback(
     async (values: LoginFormValues) => {
@@ -66,10 +68,10 @@ const LoginPage: FC = () => {
             })
           )
         } else {
-          message.error(result.error || 'Login failed')
+          message.error(result.error || t('login_page.error_login_failed'))
         }
       } catch {
-        message.error('Network error, please check your connection')
+        message.error(t('login_page.error_network'))
       } finally {
         setLoading(false)
       }
@@ -100,28 +102,36 @@ const LoginPage: FC = () => {
         <CardContent>
           <LogoSection>
             <BrandName>
-              Teniu<BrandHighlight>link</BrandHighlight>
+              {t('login_page.brand_name_prefix')}
+              <BrandHighlight>{t('login_page.brand_name_highlight')}</BrandHighlight>
             </BrandName>
-            <Subtitle>Intelligent Gateway Node</Subtitle>
+            <Subtitle>{t('login_page.subtitle')}</Subtitle>
           </LogoSection>
           <FormSection>
             <StyledForm form={form} onFinish={handleLogin} layout="vertical" size="middle">
-              <Form.Item name="username" rules={[{ required: true, message: 'Please enter username' }]}>
-                <StyledInput prefix={<User size={14} color="#64748b" />} placeholder="Username" autoFocus />
+              <Form.Item name="username" rules={[{ required: true, message: t('login_page.username_required') }]}>
+                <StyledInput
+                  prefix={<User size={14} color="#64748b" />}
+                  placeholder={t('login_page.username_placeholder')}
+                  autoFocus
+                />
               </Form.Item>
-              <Form.Item name="password" rules={[{ required: true, message: 'Please enter password' }]}>
-                <StyledPasswordInput prefix={<Lock size={14} color="#64748b" />} placeholder="Password" />
+              <Form.Item name="password" rules={[{ required: true, message: t('login_page.password_required') }]}>
+                <StyledPasswordInput
+                  prefix={<Lock size={14} color="#64748b" />}
+                  placeholder={t('login_page.password_placeholder')}
+                />
               </Form.Item>
               <Form.Item style={{ marginBottom: 0, marginTop: 4 }}>
                 <LoginButton type="primary" htmlType="submit" loading={loading} block>
-                  Connect Node
+                  {t('login_page.submit_button')}
                 </LoginButton>
               </Form.Item>
             </StyledForm>
           </FormSection>
           <StatusBadge>
             <StatusDot />
-            <span>Teniu Cloud Network</span>
+            <span>{t('login_page.network_badge')}</span>
           </StatusBadge>
         </CardContent>
       </LoginCard>

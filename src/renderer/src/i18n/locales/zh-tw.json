@@ -1871,6 +1871,19 @@
     },
     "title": "LM Studio"
   },
+  "login_page": {
+    "brand_name_highlight": "link",
+    "brand_name_prefix": "Teniu",
+    "error_login_failed": "登入失敗",
+    "error_network": "網路錯誤，請檢查連線",
+    "network_badge": "Teniu 雲端網路",
+    "password_placeholder": "密碼",
+    "password_required": "請輸入密碼",
+    "submit_button": "開始登入",
+    "subtitle": "智慧閘道節點",
+    "username_placeholder": "使用者名稱",
+    "username_required": "請輸入使用者名稱"
+  },
   "memory": {
     "actions": "操作",
     "add_failed": "新增記憶失敗",
