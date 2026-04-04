@@ -198,31 +198,35 @@ export async function installOctelium(): Promise<CommandResult> {
 }
 
 /**
- * Spawn octelium connect as a background process (no -d flag, no admin password).
- * The process is detached and unref'd so it keeps running after Electron exits.
+ * Run `octelium connect --domain X --auth-token Y &` via /bin/sh.
+ * The shell `&` operator backgrounds the process, avoiding the macOS
+ * admin-password prompt that the `-d` (daemon/TUN) flag triggers.
+ *
+ * Arguments are passed as shell positional parameters ($0, $1) so that
+ * domain and apiKey are never interpolated into the command string,
+ * preventing command-injection.
  */
-function spawnConnectBackground(domain: string, apiKey: string, env: NodeJS.ProcessEnv): Promise<void> {
+function shellConnectBackground(domain: string, apiKey: string, env: NodeJS.ProcessEnv): Promise<void> {
   return new Promise((resolve, reject) => {
-    const args = ['connect', '--domain', domain, '--auth-token', apiKey]
     const mergedEnv = { ...process.env, ...env }
 
-    logger.debug(`Spawning background: octelium ${args.join(' ')}`)
-
-    const child = spawn('octelium', args, {
+    // $0 = domain, $1 = apiKey — safe positional args, not string interpolation
+    const child = spawn('/bin/sh', ['-c', 'octelium connect --domain "$0" --auth-token "$1" &', domain, apiKey], {
       env: mergedEnv,
-      detached: true,
-      stdio: 'ignore'
+      stdio: 'ignore',
+      detached: true
     })
 
-    child.on('error', (err) => {
-      logger.error('Failed to spawn octelium connect:', err)
+    child.on('error', (err: Error) => {
+      logger.error('Failed to exec octelium connect:', err)
       reject(new Error(`Failed to start octelium: ${err.message}`))
     })
 
-    // Detach from parent so it survives independently
     child.unref()
 
-    // Give the process a moment to start (or fail immediately)
+    logger.debug(`Shell background: octelium connect --domain ${domain} --auth-token ***`)
+
+    // Give the shell a moment to fork the background process
     setTimeout(() => resolve(), 500)
   })
 }
@@ -258,10 +262,10 @@ export async function connect(apiUrl: string, apiKey: string): Promise<CommandRe
 
     const octeliumEnv = getOcteliumEnv(domain)
 
-    // Spawn connect as a background process (no -d flag, no admin password)
+    // Shell background: octelium connect --domain X --auth-token Y &
     try {
-      await spawnConnectBackground(domain, apiKey, octeliumEnv)
-      logger.info('octelium connect process launched in background')
+      await shellConnectBackground(domain, apiKey, octeliumEnv)
+      logger.info('octelium connect launched in shell background')
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error)
       logger.error('Connect spawn failed:', error as Error)

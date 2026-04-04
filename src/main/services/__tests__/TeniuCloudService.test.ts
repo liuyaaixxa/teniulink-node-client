@@ -172,7 +172,7 @@ describe('TeniuCloudService', () => {
     })
   })
 
-  describe('connect (background spawn flow)', () => {
+  describe('connect (shell background flow)', () => {
     // Helper to mock spawn returning a child process that starts successfully
     function mockSpawnSuccess() {
       mockSpawn.mockReturnValue({
@@ -193,7 +193,7 @@ describe('TeniuCloudService', () => {
       })
     }
 
-    it('should spawn background connect and verify via status polling', async () => {
+    it('should run shell background connect with & and verify via status polling', async () => {
       mockSpawnSuccess()
       // which octelium → found, then status polling: which → found, status → connected
       mockExecFileSequence([
@@ -205,15 +205,15 @@ describe('TeniuCloudService', () => {
       const result = await connect('https://teniuapi.cloud', 'test-auth-token')
       expect(result.success).toBe(true)
 
-      // Verify spawn was called with correct args (no -d flag)
+      // Verify spawn was called via /bin/sh -c with & and positional args
       expect(mockSpawn).toHaveBeenCalledWith(
-        'octelium',
-        ['connect', '--domain', 'teniuapi.cloud', '--auth-token', 'test-auth-token'],
+        '/bin/sh',
+        ['-c', 'octelium connect --domain "$0" --auth-token "$1" &', 'teniuapi.cloud', 'test-auth-token'],
         expect.objectContaining({ detached: true, stdio: 'ignore' })
       )
     })
 
-    it('should return error when spawn itself fails', async () => {
+    it('should return error when shell spawn fails', async () => {
       mockSpawnError('ENOENT')
       // which octelium → found
       mockExecFileSequence([{ stdout: '/usr/local/bin/octelium' }])
