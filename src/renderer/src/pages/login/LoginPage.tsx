@@ -3,12 +3,48 @@ import { setAuthLogin } from '@renderer/store/settings'
 import { Button, Form, Input, message } from 'antd'
 import { Lock, User } from 'lucide-react'
 import type { FC } from 'react'
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import styled, { keyframes } from 'styled-components'
 
 interface LoginFormValues {
   username: string
   password: string
+}
+
+// Stable node positions for the blockchain network background
+const NODES = [
+  { x: 8, y: 12 },
+  { x: 25, y: 8 },
+  { x: 45, y: 15 },
+  { x: 70, y: 10 },
+  { x: 88, y: 18 },
+  { x: 15, y: 35 },
+  { x: 38, y: 42 },
+  { x: 62, y: 38 },
+  { x: 82, y: 45 },
+  { x: 95, y: 32 },
+  { x: 5, y: 58 },
+  { x: 22, y: 65 },
+  { x: 50, y: 60 },
+  { x: 75, y: 62 },
+  { x: 92, y: 55 },
+  { x: 12, y: 82 },
+  { x: 35, y: 85 },
+  { x: 55, y: 78 },
+  { x: 78, y: 88 },
+  { x: 90, y: 75 }
+]
+
+// Connect nodes that are reasonably close (within 30% distance)
+const EDGES: [number, number][] = []
+for (let i = 0; i < NODES.length; i++) {
+  for (let j = i + 1; j < NODES.length; j++) {
+    const dx = NODES[i].x - NODES[j].x
+    const dy = NODES[i].y - NODES[j].y
+    if (Math.sqrt(dx * dx + dy * dy) < 30) {
+      EDGES.push([i, j])
+    }
+  }
 }
 
 const LoginPage: FC = () => {
@@ -41,9 +77,24 @@ const LoginPage: FC = () => {
     [dispatch]
   )
 
+  const networkSvg = useMemo(
+    () => (
+      <NetworkBg viewBox="0 0 100 100" preserveAspectRatio="none">
+        {EDGES.map(([a, b], i) => (
+          <NetworkLine key={`e${i}`} x1={NODES[a].x} y1={NODES[a].y} x2={NODES[b].x} y2={NODES[b].y} $delay={i * 0.3} />
+        ))}
+        {NODES.map((n, i) => (
+          <NetworkNode key={`n${i}`} cx={n.x} cy={n.y} r={0.6} $delay={i * 0.2} />
+        ))}
+      </NetworkBg>
+    ),
+    []
+  )
+
   return (
     <PageContainer>
       <GlowBg />
+      {networkSvg}
       <ContentWrapper>
         <LogoSection>
           <BrandName>
@@ -80,6 +131,16 @@ const glowPulse = keyframes`
   50% { opacity: 1; }
 `
 
+const linePulse = keyframes`
+  0%, 100% { opacity: 0.06; stroke: #00ff88; }
+  50% { opacity: 0.2; stroke: #00a8ff; }
+`
+
+const nodePulse = keyframes`
+  0%, 100% { opacity: 0.3; r: 0.5; }
+  50% { opacity: 0.8; r: 0.8; }
+`
+
 const dotPulse = keyframes`
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }
@@ -104,6 +165,26 @@ const GlowBg = styled.div`
     radial-gradient(ellipse at 70% 80%, rgba(0, 168, 255, 0.06) 0%, transparent 50%);
   animation: ${glowPulse} 6s ease-in-out infinite;
   pointer-events: none;
+`
+
+const NetworkBg = styled.svg`
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+`
+
+const NetworkLine = styled.line<{ $delay: number }>`
+  stroke-width: 0.15;
+  animation: ${linePulse} ${() => 4 + Math.random() * 3}s ease-in-out infinite;
+  animation-delay: ${({ $delay }) => $delay}s;
+`
+
+const NetworkNode = styled.circle<{ $delay: number }>`
+  fill: #00ff88;
+  animation: ${nodePulse} ${() => 3 + Math.random() * 2}s ease-in-out infinite;
+  animation-delay: ${({ $delay }) => $delay}s;
 `
 
 const ContentWrapper = styled.div`
