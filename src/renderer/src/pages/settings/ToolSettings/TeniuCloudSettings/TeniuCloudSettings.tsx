@@ -2,7 +2,12 @@ import { useTheme } from '@renderer/context/ThemeProvider'
 import { loggerService } from '@renderer/services/LoggerService'
 import type { RootState } from '@renderer/store'
 import { useAppDispatch } from '@renderer/store'
-import { setTeniuCloudApiKey, setTeniuCloudApiUrl, setTeniuCloudConnectionStatus } from '@renderer/store/settings'
+import {
+  setTeniuCloudApiKey,
+  setTeniuCloudApiUrl,
+  setTeniuCloudConnectionStatus,
+  setTeniuCloudServiceName
+} from '@renderer/store/settings'
 import type { TeniuCloudConnectionStatus } from '@renderer/types'
 import { TENIU_CLOUD_DEFAULTS } from '@renderer/types/teniuCloud'
 import { Button, Input, Modal, Spin, Typography } from 'antd'
@@ -45,10 +50,13 @@ const TeniuCloudSettings: FC = () => {
   const teniuCloudConfig = useSelector((state: RootState) => state.settings.teniuCloud) || {
     apiUrl: TENIU_CLOUD_DEFAULTS.API_URL,
     apiKey: '',
-    connectionStatus: 'disconnected' as TeniuCloudConnectionStatus
+    connectionStatus: 'disconnected' as TeniuCloudConnectionStatus,
+    serviceName: ''
   }
+  const authState = useSelector((state: RootState) => state.settings.auth)
 
   const [isLoading, setIsLoading] = useState(false)
+  const [installStatus, setInstallStatus] = useState<string | null>(null)
   const [localModels, setLocalModels] = useState<LocalModelsState>({
     models: [],
     total: 0,
@@ -148,6 +156,7 @@ const TeniuCloudSettings: FC = () => {
     }
 
     setIsLoading(true)
+    setInstallStatus(null)
     dispatch(setTeniuCloudConnectionStatus('connecting'))
 
     try {
@@ -156,6 +165,36 @@ const TeniuCloudSettings: FC = () => {
       if (result.success) {
         dispatch(setTeniuCloudConnectionStatus('connected'))
         window.toast.success(t('teniuCloud.messages.connectSuccess'))
+
+        // Resolve service name in background
+        try {
+          const tokensResult = await window.api.teniuCloudGetDeviceTokens()
+          if (tokensResult.success && tokensResult.tokens.length > 0 && authState?.username) {
+            const apiKey = teniuCloudConfig.apiKey
+            const keyPrefix = apiKey.substring(0, 4)
+            const keySuffix = apiKey.substring(apiKey.length - 4)
+
+            const matched = tokensResult.tokens.find((token) => {
+              if (!token.tokenMask) return false
+              return (
+                token.tokenMask.substring(0, 4) === keyPrefix &&
+                token.tokenMask.substring(token.tokenMask.length - 4) === keySuffix
+              )
+            })
+
+            const deviceName = matched?.name || tokensResult.tokens.find((t) => t.status === 1)?.name
+            if (deviceName) {
+              const serviceName = `${authState.username}-${deviceName}`
+                .replace(/[\s_]+/g, '-')
+                .toLowerCase()
+                .substring(0, 64)
+              dispatch(setTeniuCloudServiceName(serviceName))
+              logger.info(`Service name resolved: ${serviceName}`)
+            }
+          }
+        } catch (error) {
+          logger.warn('Failed to resolve service name:', error as Error)
+        }
       } else {
         dispatch(setTeniuCloudConnectionStatus('disconnected'))
         showErrorModal(result.error || t('teniuCloud.messages.connectFailed'))
@@ -165,6 +204,7 @@ const TeniuCloudSettings: FC = () => {
       showErrorModal((error as Error).message)
     } finally {
       setIsLoading(false)
+      setInstallStatus(null)
     }
   }
 
@@ -172,10 +212,11 @@ const TeniuCloudSettings: FC = () => {
     setIsLoading(true)
 
     try {
-      const result = await window.api.teniuCloudDisconnect()
+      const result = await window.api.teniuCloudDisconnect(teniuCloudConfig.serviceName || undefined)
 
       if (result.success) {
         dispatch(setTeniuCloudConnectionStatus('disconnected'))
+        dispatch(setTeniuCloudServiceName(''))
         window.toast.success(t('teniuCloud.messages.disconnectSuccess'))
       } else {
         showErrorModal(result.error || t('teniuCloud.messages.disconnectFailed'))
@@ -237,9 +278,17 @@ const TeniuCloudSettings: FC = () => {
           </StatusIcon>
           <StatusInfo>
             <StatusLabel $connected={isConnected}>
-              {isConnected ? t('teniuCloud.status.connected') : t('teniuCloud.status.disconnected')}
+              {installStatus
+                ? installStatus
+                : isConnected
+                  ? t('teniuCloud.status.connected')
+                  : t('teniuCloud.status.disconnected')}
             </StatusLabel>
-            <StatusValue>{teniuCloudConfig.apiUrl || t('teniuCloud.status.configurePrompt')}</StatusValue>
+            <StatusValue>
+              {isConnected && teniuCloudConfig.serviceName
+                ? `${teniuCloudConfig.apiUrl} · ${teniuCloudConfig.serviceName}`
+                : teniuCloudConfig.apiUrl || t('teniuCloud.status.configurePrompt')}
+            </StatusValue>
           </StatusInfo>
           <ControlSection>
             {isLoading || isConnecting ? (

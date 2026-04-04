@@ -5578,7 +5578,8 @@
       "configurePrompt": "設定 API 位址和存取金鑰以連線",
       "connected": "已連線",
       "connecting": "連線中...",
-      "disconnected": "未連線"
+      "disconnected": "未連線",
+      "installing": "正在安裝 octelium..."
     },
     "title": "Teniu雲"
   },

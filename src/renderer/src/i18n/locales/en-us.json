@@ -5578,7 +5578,8 @@
       "configurePrompt": "Configure API URL and API Key to connect",
       "connected": "Connected",
       "connecting": "Connecting...",
-      "disconnected": "Disconnected"
+      "disconnected": "Disconnected",
+      "installing": "Installing octelium..."
     },
     "title": "Teniu Cloud"
   },

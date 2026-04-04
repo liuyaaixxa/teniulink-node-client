@@ -5578,7 +5578,8 @@
       "configurePrompt": "配置 API 地址和访问秘钥以连接",
       "connected": "已连接",
       "connecting": "连接中...",
-      "disconnected": "未连接"
+      "disconnected": "未连接",
+      "installing": "正在安装 octelium..."
     },
     "title": "Teniu云"
   },

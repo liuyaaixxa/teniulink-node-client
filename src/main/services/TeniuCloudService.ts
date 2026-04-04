@@ -3,12 +3,18 @@ import { execFile } from 'node:child_process'
 import { loggerService } from '@logger'
 import { API_SERVER_DEFAULTS } from '@shared/config/constant'
 
+import { authService } from './AuthService'
+
 const logger = loggerService.withContext('TeniuCloudService')
 
+declare const __TENIU_CLOUD_API_BASE__: string
+const DEFAULT_API_BASE = __TENIU_CLOUD_API_BASE__
+
 // Timeout for CLI commands
-const LOGIN_TIMEOUT_MS = 30000
-const CONNECT_TIMEOUT_MS = 60000 // connect -d may take longer
+const COMMAND_TIMEOUT_MS = 30000
+const CONNECT_TIMEOUT_MS = 60000
 const STATUS_TIMEOUT_MS = 10000
+const INSTALL_TIMEOUT_MS = 300000 // 5 minutes for brew install
 
 interface CommandResult {
   success: boolean
@@ -17,6 +23,20 @@ interface CommandResult {
 
 interface ConnectionStatus {
   connected: boolean
+  error?: string
+}
+
+export interface DeviceToken {
+  id: number
+  name: string
+  tokenMask: string
+  domain: string
+  status: number
+}
+
+export interface DeviceTokensResult {
+  success: boolean
+  tokens: DeviceToken[]
   error?: string
 }
 
@@ -39,12 +59,11 @@ export interface LocalModelsResult {
 
 /**
  * Execute a command with arguments using execFile (safer than exec)
- * Uses execFile to prevent shell injection
  */
 async function executeCommand(
   command: string,
   args: string[] = [],
-  timeoutMs: number = LOGIN_TIMEOUT_MS,
+  timeoutMs: number = COMMAND_TIMEOUT_MS,
   env?: NodeJS.ProcessEnv
 ): Promise<{ stdout: string; stderr: string }> {
   return new Promise((resolve, reject) => {
@@ -95,59 +114,121 @@ function getOcteliumEnv(domain?: string): NodeJS.ProcessEnv {
 }
 
 /**
- * Connect to Teniu Cloud using octelium CLI
- * This performs: login -> connect (opens local tunnel)
- * @param apiUrl - The API URL (domain)
- * @param apiKey - The authentication token
+ * Extract domain from an API URL string
+ */
+function extractDomain(apiUrl: string): string {
+  try {
+    const url = new URL(apiUrl)
+    return url.hostname
+  } catch {
+    return apiUrl.replace(/^https?:\/\//, '').replace(/\/.*$/, '')
+  }
+}
+
+/**
+ * Auto-install octelium CLI based on platform
+ * macOS: brew install octelium/tap/octelium
+ * Linux: download binary from official release
+ */
+export async function installOctelium(): Promise<CommandResult> {
+  const platform = process.platform
+
+  logger.info(`Installing octelium for platform: ${platform}`)
+
+  if (platform === 'darwin') {
+    // macOS: use Homebrew
+    try {
+      await executeCommand('which', ['brew'], 5000)
+    } catch {
+      return {
+        success: false,
+        error:
+          'Homebrew is not installed. Please install Homebrew first (https://brew.sh) or install octelium manually.'
+      }
+    }
+
+    try {
+      logger.info('Installing octelium via Homebrew...')
+      await executeCommand('brew', ['install', 'octelium/tap/octelium'], INSTALL_TIMEOUT_MS)
+      logger.info('octelium installed successfully via Homebrew')
+      return { success: true }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error)
+      logger.error('Homebrew install failed:', error as Error)
+      return { success: false, error: `Homebrew install failed: ${errorMsg}` }
+    }
+  } else if (platform === 'linux') {
+    // Linux: download binary
+    try {
+      const arch = process.arch === 'arm64' ? 'arm64' : 'amd64'
+      const url = `https://github.com/octelium/octelium/releases/latest/download/octelium_linux_${arch}`
+
+      logger.info(`Downloading octelium binary from ${url}`)
+
+      // Try /usr/local/bin first, fall back to ~/.local/bin
+      const installPaths = ['/usr/local/bin/octelium', `${process.env.HOME}/.local/bin/octelium`]
+
+      for (const installPath of installPaths) {
+        try {
+          // Ensure directory exists
+          const dir = installPath.substring(0, installPath.lastIndexOf('/'))
+          await executeCommand('mkdir', ['-p', dir], 10000)
+
+          await executeCommand('curl', ['-fsSL', '-o', installPath, url], INSTALL_TIMEOUT_MS)
+          await executeCommand('chmod', ['+x', installPath], 5000)
+
+          logger.info(`octelium installed to ${installPath}`)
+          return { success: true }
+        } catch {
+          logger.debug(`Failed to install to ${installPath}, trying next...`)
+          continue
+        }
+      }
+
+      return { success: false, error: 'Failed to install octelium binary. Please install manually.' }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error)
+      return { success: false, error: `Linux install failed: ${errorMsg}` }
+    }
+  } else {
+    return {
+      success: false,
+      error: `Auto-install is not supported on ${platform}. Please install octelium manually from https://github.com/octelium/octelium`
+    }
+  }
+}
+
+/**
+ * Connect to Teniu Cloud using one-step octelium connect command
+ * Uses: octelium connect -d --domain {domain} --auth-token {apiKey}
  */
 export async function connect(apiUrl: string, apiKey: string): Promise<CommandResult> {
   try {
-    // Check if octelium is installed
-    const installed = await isOcteliumInstalled()
+    // Check if octelium is installed, auto-install if not
+    let installed = await isOcteliumInstalled()
     if (!installed) {
-      const errorMsg = 'octelium CLI is not installed. Please install it first.'
-      logger.error(errorMsg)
-      return { success: false, error: errorMsg }
+      logger.info('octelium not found, attempting auto-install...')
+      const installResult = await installOctelium()
+      if (!installResult.success) {
+        return installResult
+      }
+      // Verify install succeeded
+      installed = await isOcteliumInstalled()
+      if (!installed) {
+        return { success: false, error: 'octelium installation completed but binary not found in PATH' }
+      }
     }
 
-    // Extract domain from apiUrl
-    let domain = apiUrl
-    try {
-      const url = new URL(apiUrl)
-      domain = url.hostname
-    } catch {
-      // If apiUrl is not a valid URL, assume it's already a domain
-      domain = apiUrl.replace(/^https?:\/\//, '').replace(/\/.*$/, '')
-    }
-
+    const domain = extractDomain(apiUrl)
     logger.info(`Connecting to Teniu Cloud: ${domain}`)
 
-    // Get environment variables for octelium
     const octeliumEnv = getOcteliumEnv(domain)
 
-    // Step 1: Login to the cluster
-    logger.info('Step 1: Logging in to cluster...')
+    // One-step connect with auth-token
     try {
-      const loginResult = await executeCommand(
-        'octelium',
-        ['login', '--domain', domain, '--auth-token', apiKey],
-        LOGIN_TIMEOUT_MS,
-        octeliumEnv
-      )
-      logger.info(`Login output: ${loginResult.stdout.trim()}`)
-    } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : String(error)
-      logger.error('Login failed:', error as Error)
-      return { success: false, error: `Login failed: ${errorMsg}` }
-    }
-
-    // Step 2: Connect to the cluster (open local tunnel in detached/background mode)
-    logger.info('Step 2: Opening local tunnel to cluster...')
-    try {
-      // Use -d (--detach) to run connect in background
       const connectResult = await executeCommand(
         'octelium',
-        ['connect', '-d', '--domain', domain],
+        ['connect', '-d', '--domain', domain, '--auth-token', apiKey],
         CONNECT_TIMEOUT_MS,
         octeliumEnv
       )
@@ -160,19 +241,16 @@ export async function connect(apiUrl: string, apiKey: string): Promise<CommandRe
       return { success: false, error: `Connect failed: ${errorMsg}` }
     }
 
-    // Step 3: Verify connection by checking status
-    logger.info('Step 3: Verifying connection...')
-    await new Promise((resolve) => setTimeout(resolve, 2000)) // Wait a moment for connection to establish
-
+    // Verify connection
+    await new Promise((resolve) => setTimeout(resolve, 2000))
     const status = await checkStatusWithEnv(domain)
     if (status.connected) {
       logger.info('Successfully connected to Teniu Cloud')
-      return { success: true }
     } else {
       logger.warn('Connection verification failed, but command completed')
-      // Still return success since commands completed without error
-      return { success: true }
     }
+
+    return { success: true }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)
     logger.error('Failed to connect to Teniu Cloud:', error as Error)
@@ -181,30 +259,45 @@ export async function connect(apiUrl: string, apiKey: string): Promise<CommandRe
 }
 
 /**
- * Disconnect from Teniu Cloud using octelium CLI
- * This performs: disconnect (close tunnel) -> logout
+ * Disconnect from Teniu Cloud
+ * Uses: octelium disconnect --serve "{serviceName}" when available
  */
-export async function disconnect(): Promise<CommandResult> {
+export async function disconnect(serviceName?: string): Promise<CommandResult> {
   try {
-    // Check if octelium is installed
     const installed = await isOcteliumInstalled()
     if (!installed) {
-      // Not installed means not connected anyway
       return { success: true }
     }
 
     logger.info('Disconnecting from Teniu Cloud')
 
-    // Step 1: Disconnect from the cluster (close tunnel)
+    // Try disconnect with --serve flag if serviceName is provided
+    if (serviceName) {
+      try {
+        logger.info(`Disconnecting service: ${serviceName}`)
+        const result = await executeCommand(
+          'octelium',
+          ['disconnect', '--serve', serviceName],
+          COMMAND_TIMEOUT_MS,
+          getOcteliumEnv()
+        )
+        logger.info(`Disconnect output: ${result.stdout.trim() || result.stderr.trim() || 'Done'}`)
+        return { success: true }
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error)
+        logger.warn(`Disconnect with --serve failed: ${errorMsg}, trying bare disconnect`)
+        // Fall through to bare disconnect
+      }
+    }
+
+    // Bare disconnect fallback
     try {
-      logger.info('Step 1: Closing local tunnel...')
-      const result = await executeCommand('octelium', ['disconnect'], LOGIN_TIMEOUT_MS, getOcteliumEnv())
+      const result = await executeCommand('octelium', ['disconnect'], COMMAND_TIMEOUT_MS, getOcteliumEnv())
       logger.info(`Disconnect output: ${result.stdout.trim() || result.stderr.trim() || 'Done'}`)
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error)
       const lowerErrorMsg = errorMsg.toLowerCase()
 
-      // If the error indicates no active connection, continue to logout
       if (
         lowerErrorMsg.includes('not connected') ||
         lowerErrorMsg.includes('no active') ||
@@ -212,31 +305,7 @@ export async function disconnect(): Promise<CommandResult> {
       ) {
         logger.info('No active tunnel to close')
       } else {
-        // Log but don't fail - still try to logout
-        logger.warn('Failed to close tunnel, continuing to logout:', error as Error)
-      }
-    }
-
-    // Step 2: Logout from the cluster
-    try {
-      logger.info('Step 2: Logging out from cluster...')
-      const result = await executeCommand('octelium', ['logout'], LOGIN_TIMEOUT_MS, getOcteliumEnv())
-      logger.info(`Logout output: ${result.stdout.trim() || result.stderr.trim() || 'Done'}`)
-    } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : String(error)
-      const lowerErrorMsg = errorMsg.toLowerCase()
-
-      // If the error indicates no active connection/domain, treat as success
-      if (
-        lowerErrorMsg.includes('domain is not set') ||
-        lowerErrorMsg.includes('domain not set') ||
-        lowerErrorMsg.includes('not logged in') ||
-        lowerErrorMsg.includes('not connected') ||
-        lowerErrorMsg.includes('please authenticate')
-      ) {
-        logger.info('Already logged out (no active session)')
-      } else {
-        throw error // Re-throw other errors
+        logger.warn('Disconnect failed:', error as Error)
       }
     }
 
@@ -256,24 +325,17 @@ export async function checkStatus(): Promise<ConnectionStatus> {
   return checkStatusWithEnv()
 }
 
-/**
- * Internal function to check status with optional domain env
- */
 async function checkStatusWithEnv(domain?: string): Promise<ConnectionStatus> {
   try {
-    // Check if octelium is installed
     const installed = await isOcteliumInstalled()
     if (!installed) {
       return { connected: false, error: 'octelium CLI is not installed' }
     }
 
-    // Try to check status using 'octelium status' command
     try {
       const env = getOcteliumEnv(domain)
       const { stdout } = await executeCommand('octelium', ['status'], STATUS_TIMEOUT_MS, env)
 
-      // Check for success indicators in output
-      // octelium status shows connection info when connected
       if (stdout.includes('cluster:') || stdout.includes('session:') || stdout.includes('user:')) {
         return { connected: true }
       }
@@ -283,7 +345,6 @@ async function checkStatusWithEnv(domain?: string): Promise<ConnectionStatus> {
       const errorMsg = error instanceof Error ? error.message : String(error)
       const lowerErrorMsg = errorMsg.toLowerCase()
 
-      // If status command fails with these messages, we're not connected
       if (
         lowerErrorMsg.includes('not logged in') ||
         lowerErrorMsg.includes('not connected') ||
@@ -295,7 +356,6 @@ async function checkStatusWithEnv(domain?: string): Promise<ConnectionStatus> {
         return { connected: false }
       }
 
-      // Other errors - assume not connected
       logger.debug('Status check failed:', error as Error)
       return { connected: false }
     }
@@ -307,12 +367,116 @@ async function checkStatusWithEnv(domain?: string): Promise<ConnectionStatus> {
 }
 
 /**
- * Get local models from the local API server (智能网关)
- * Fetches models from http://localhost:{port}/v1/models
+ * Get device tokens from Teniu Cloud backend API
+ * Uses the session cookie from AuthService for authentication
+ */
+export async function getDeviceTokens(): Promise<DeviceTokensResult> {
+  try {
+    const cookie = authService.getSessionCookie()
+    if (!cookie) {
+      return { success: false, tokens: [], error: 'Not logged in. Please login first.' }
+    }
+
+    const apiBase = DEFAULT_API_BASE
+    const url = `${apiBase}/api/device-token/?p=1&size=100`
+
+    logger.debug(`Fetching device tokens from ${url}`)
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        Cookie: `session=${cookie}`,
+        'Content-Type': 'application/json'
+      }
+    })
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        return { success: false, tokens: [], error: 'Session expired. Please login again.' }
+      }
+      return { success: false, tokens: [], error: `HTTP ${response.status}` }
+    }
+
+    const json = await response.json()
+
+    if (!json.success) {
+      return { success: false, tokens: [], error: json.message || 'Failed to fetch device tokens' }
+    }
+
+    const items = json.data?.items || []
+    const tokens: DeviceToken[] = items.map((item: any) => ({
+      id: item.id,
+      name: item.name || '',
+      tokenMask: item.token_mask || '',
+      domain: item.domain || '',
+      status: item.status || 0
+    }))
+
+    logger.info(`Fetched ${tokens.length} device tokens`)
+    return { success: true, tokens }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    logger.error('Failed to fetch device tokens:', error as Error)
+    return { success: false, tokens: [], error: errorMessage }
+  }
+}
+
+/**
+ * Resolve service name by matching API key against device token masks
+ * Token mask format: first4****last4
+ * Service name format: {username}-{deviceName} (normalized)
+ */
+export function resolveServiceName(apiKey: string, username: string, tokens: DeviceToken[]): string | null {
+  if (!apiKey || !username || tokens.length === 0) {
+    return null
+  }
+
+  // Extract first 4 and last 4 characters of apiKey for matching
+  const keyPrefix = apiKey.substring(0, 4)
+  const keySuffix = apiKey.substring(apiKey.length - 4)
+
+  // Find matching token by comparing mask pattern
+  const matchedToken = tokens.find((token) => {
+    if (!token.tokenMask) return false
+    const maskPrefix = token.tokenMask.substring(0, 4)
+    const maskSuffix = token.tokenMask.substring(token.tokenMask.length - 4)
+    return maskPrefix === keyPrefix && maskSuffix === keySuffix
+  })
+
+  if (!matchedToken) {
+    logger.warn('No matching device token found for API key')
+    // If only one active token, use it as fallback
+    const activeTokens = tokens.filter((t) => t.status === 1)
+    if (activeTokens.length === 1) {
+      logger.info(`Using single active token: ${activeTokens[0].name}`)
+      return normalizeServiceName(username, activeTokens[0].name)
+    }
+    return null
+  }
+
+  return normalizeServiceName(username, matchedToken.name)
+}
+
+/**
+ * Normalize service name: {username}-{deviceName}
+ * Lowercase, spaces/underscores → hyphens, max 64 chars
+ */
+function normalizeServiceName(username: string, deviceName: string): string {
+  const raw = `${username}-${deviceName}`
+  const normalized = raw
+    .replace(/[\s_]+/g, '-')
+    .toLowerCase()
+    .substring(0, 64)
+
+  logger.info(`Resolved service name: ${normalized}`)
+  return normalized
+}
+
+/**
+ * Get local models from the local API server
  */
 export async function getLocalModels(): Promise<LocalModelsResult> {
   try {
-    // Dynamically import config to avoid circular dependency
     const { config } = await import('../apiServer/config.js')
 
     const apiConfig = await config.get()
@@ -347,11 +511,9 @@ export async function getLocalModels(): Promise<LocalModelsResult> {
 
     const data = await response.json()
 
-    // Validate response structure - expect { object: "list", data: [...], total: number }
     const modelList = Array.isArray(data?.data) ? data.data : []
     const total = typeof data?.total === 'number' ? data.total : modelList.length
 
-    // Transform the response to our LocalModel format
     const models: LocalModel[] = modelList.map((model: any) => ({
       id: model.id || '',
       name: model.name || model.id || '',
@@ -363,12 +525,7 @@ export async function getLocalModels(): Promise<LocalModelsResult> {
 
     logger.info(`Fetched ${models.length} local models from gateway`)
 
-    return {
-      success: true,
-      models,
-      total,
-      gatewayUrl
-    }
+    return { success: true, models, total, gatewayUrl }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)
     logger.error('Failed to get local models:', error as Error)
@@ -386,7 +543,10 @@ export const teniuCloudService = {
   connect,
   disconnect,
   checkStatus,
-  getLocalModels
+  getLocalModels,
+  installOctelium,
+  getDeviceTokens,
+  resolveServiceName
 }
 
 export default teniuCloudService

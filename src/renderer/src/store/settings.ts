@@ -464,7 +464,8 @@ export const initialState: SettingsState = {
   teniuCloud: {
     apiUrl: TENIU_CLOUD_DEFAULTS.API_URL,
     apiKey: '',
-    connectionStatus: 'disconnected'
+    connectionStatus: 'disconnected',
+    serviceName: ''
   },
   showMessageOutline: false
 }
@@ -945,6 +946,12 @@ const settingsSlice = createSlice({
         connectionStatus: action.payload
       }
     },
+    setTeniuCloudServiceName: (state, action: PayloadAction<string>) => {
+      state.teniuCloud = {
+        ...state.teniuCloud,
+        serviceName: action.payload
+      }
+    },
     setShowMessageOutline: (state, action: PayloadAction<boolean>) => {
       state.showMessageOutline = action.payload
     }
@@ -1088,7 +1095,8 @@ export const {
   // Teniu Cloud actions
   setTeniuCloudApiUrl,
   setTeniuCloudApiKey,
-  setTeniuCloudConnectionStatus
+  setTeniuCloudConnectionStatus,
+  setTeniuCloudServiceName
 } = settingsSlice.actions
 
 export default settingsSlice.reducer

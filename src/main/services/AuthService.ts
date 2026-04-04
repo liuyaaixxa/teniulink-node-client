@@ -88,8 +88,13 @@ async function checkAuth(token?: string): Promise<CheckAuthResult> {
   return { valid: true }
 }
 
+function getSessionCookie(): string | null {
+  return sessionCookie
+}
+
 export const authService = {
   login,
   logout,
-  checkAuth
+  checkAuth,
+  getSessionCookie
 }

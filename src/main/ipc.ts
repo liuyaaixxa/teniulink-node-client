@@ -1226,7 +1226,11 @@ export async function registerIpc(mainWindow: BrowserWindow, app: Electron.App) 
   ipcMain.handle(IpcChannel.TeniuCloud_Connect, (_, apiUrl: string, apiKey: string) =>
     teniuCloudService.connect(apiUrl, apiKey)
   )
-  ipcMain.handle(IpcChannel.TeniuCloud_Disconnect, () => teniuCloudService.disconnect())
+  ipcMain.handle(IpcChannel.TeniuCloud_Disconnect, (_, serviceName?: string) =>
+    teniuCloudService.disconnect(serviceName)
+  )
   ipcMain.handle(IpcChannel.TeniuCloud_CheckStatus, () => teniuCloudService.checkStatus())
   ipcMain.handle(IpcChannel.TeniuCloud_GetLocalModels, () => teniuCloudService.getLocalModels())
+  ipcMain.handle(IpcChannel.TeniuCloud_InstallOctelium, () => teniuCloudService.installOctelium())
+  ipcMain.handle(IpcChannel.TeniuCloud_GetDeviceTokens, () => teniuCloudService.getDeviceTokens())
 }

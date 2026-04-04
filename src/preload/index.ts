@@ -161,8 +161,8 @@ const api = {
   // Teniu Cloud
   teniuCloudConnect: (apiUrl: string, apiKey: string): Promise<{ success: boolean; error?: string }> =>
     ipcRenderer.invoke(IpcChannel.TeniuCloud_Connect, apiUrl, apiKey),
-  teniuCloudDisconnect: (): Promise<{ success: boolean; error?: string }> =>
-    ipcRenderer.invoke(IpcChannel.TeniuCloud_Disconnect),
+  teniuCloudDisconnect: (serviceName?: string): Promise<{ success: boolean; error?: string }> =>
+    ipcRenderer.invoke(IpcChannel.TeniuCloud_Disconnect, serviceName),
   teniuCloudCheckStatus: (): Promise<{ connected: boolean; error?: string }> =>
     ipcRenderer.invoke(IpcChannel.TeniuCloud_CheckStatus),
   teniuCloudGetLocalModels: (): Promise<{
@@ -179,6 +179,13 @@ const api = {
     gatewayUrl: string
     error?: string
   }> => ipcRenderer.invoke(IpcChannel.TeniuCloud_GetLocalModels),
+  teniuCloudInstallOctelium: (): Promise<{ success: boolean; error?: string }> =>
+    ipcRenderer.invoke(IpcChannel.TeniuCloud_InstallOctelium),
+  teniuCloudGetDeviceTokens: (): Promise<{
+    success: boolean
+    tokens: Array<{ id: number; name: string; tokenMask: string; domain: string; status: number }>
+    error?: string
+  }> => ipcRenderer.invoke(IpcChannel.TeniuCloud_GetDeviceTokens),
   mac: {
     isProcessTrusted: (): Promise<boolean> => ipcRenderer.invoke(IpcChannel.App_MacIsProcessTrusted),
     requestProcessTrust: (): Promise<boolean> => ipcRenderer.invoke(IpcChannel.App_MacRequestProcessTrust)
