@@ -1,11 +1,11 @@
 <div align="center">
-  <a href="https://github.com/teniu-projects/teniulink-node-client">
+  <a href="https://github.com/liuyaaixxa/teniulink-node-client">
     <img src="./resources/logos/tu-option6-green.svg" width="120" height="120" alt="Teniulink Node" />
   </a>
   <h1>Teniulink Node</h1>
   <p><strong>跨平台 AI 助手桌面客户端</strong></p>
   <p>
-    <a href="https://github.com/teniu-projects/teniulink-node-client/releases">下载</a> ·
+    <a href="https://github.com/liuyaaixxa/teniulink-node-client/releases">下载</a> ·
     <a href="#-核心特性">特性</a> ·
     <a href="#-快速开始">快速开始</a> ·
     <a href="#-开发">开发</a>
@@ -47,7 +47,7 @@ Teniulink Node 是一款跨平台 AI 助手桌面客户端，支持 Windows、ma
 
 ### 下载安装
 
-从 [Releases](https://github.com/teniu-projects/teniulink-node-client/releases) 页面下载对应平台的安装包。
+从 [Releases](https://github.com/liuyaaixxa/teniulink-node-client/releases) 页面下载对应平台的安装包。
 
 ### 配置 LLM 服务
 
