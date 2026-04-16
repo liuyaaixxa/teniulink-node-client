@@ -64,9 +64,9 @@ export class WindowService {
       mainWindowBackgroundColor = nativeTheme.shouldUseDarkColors ? '#181818' : '#FFFFFF'
     }
 
+    const hasPosition = mainWindowState.x !== undefined && mainWindowState.y !== undefined
     this.mainWindow = new BrowserWindow({
-      x: mainWindowState.x,
-      y: mainWindowState.y,
+      ...(hasPosition ? { x: mainWindowState.x, y: mainWindowState.y } : { center: true }),
       width: mainWindowState.width,
       height: mainWindowState.height,
       minWidth: MIN_WINDOW_WIDTH,

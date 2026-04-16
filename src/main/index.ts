@@ -8,9 +8,10 @@ import '@main/config'
 import { loggerService } from '@logger'
 import { electronApp, optimizer } from '@electron-toolkit/utils'
 import { replaceDevtoolsFont } from '@main/utils/windowUtil'
-import { app, crashReporter } from 'electron'
+import { app, crashReporter, nativeImage } from 'electron'
 import installExtension, { REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS } from 'electron-devtools-installer'
 import { isDev, isLinux, isWin } from './constant'
+import appIcon from '../../build/icon.png?asset'
 
 import process from 'node:process'
 
@@ -140,8 +141,16 @@ if (!app.requestSingleInstanceLock()) {
     versionService.recordCurrentVersion()
 
     initWebviewHotkeys()
+    // Set app name (dev mode defaults to "Electron")
+    app.setName('Teniulink Node')
+
     // Set app user model id for windows
-    electronApp.setAppUserModelId(import.meta.env.VITE_MAIN_BUNDLE_ID || 'com.kangfenmao.CherryStudio')
+    electronApp.setAppUserModelId(import.meta.env.VITE_MAIN_BUNDLE_ID || 'com.teniulink.node')
+
+    // Set Dock icon to Teniulink logo (macOS dev mode shows Electron icon by default)
+    if (app.dock) {
+      app.dock.setIcon(nativeImage.createFromPath(appIcon))
+    }
 
     // Mac: Hide dock icon before window creation when launch to tray is set
     const isLaunchToTray = configManager.getLaunchToTray()
