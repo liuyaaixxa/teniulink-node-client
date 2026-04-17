@@ -19,7 +19,7 @@ export default defineConfig({
   main: {
     plugins: [...visualizerPlugin('main')],
     define: {
-      __TENIU_CLOUD_API_BASE__: JSON.stringify(process.env.TENIU_CLOUD_API_BASE || 'http://localhost:3000')
+      __TENIU_CLOUD_API_BASE__: JSON.stringify(process.env.TENIU_CLOUD_API_BASE || 'https://teniuapi.online')
     },
     resolve: {
       alias: {
