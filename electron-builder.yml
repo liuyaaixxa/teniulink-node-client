@@ -141,46 +141,30 @@ artifactBuildCompleted: scripts/artifact-build-completed.js
 releaseInfo:
   releaseNotes: |
     <!--LANG:en-->
-    Teniulink Node v0.1.0 - Initial Release
+    Teniulink Node v0.1.1 - Access Token Login
 
-    The first official release of Teniulink Node, a cross-platform AI desktop assistant forked from Cherry Studio.
+    ✨ New Features
+    - [Login] Add manual access token login as alternative to browser OAuth login
 
-    ✨ Key Features
-    - Multi-provider AI chat (OpenAI, Claude, Gemini, Ollama, and 20+ providers)
-    - Teniu Cloud integration with device-based connection management
-    - MCP (Model Context Protocol) server support
-    - Knowledge base with RAG (Retrieval-Augmented Generation)
-    - AI image generation (DALL-E, Stable Diffusion, etc.)
-    - Rich text editor with TipTap
-    - Multi-window support (main, mini, selection toolbar)
-    - OpenTelemetry tracing for MCP operations
-
-    📦 Platforms
-    - macOS: DMG + ZIP (arm64, x64)
-    - Windows: NSIS installer + Portable (x64, arm64)
-    - Linux: AppImage + Deb + RPM (x64, arm64)
+    🐛 Bug Fixes
+    - [Branding] Fix Dock icon and app name display in development mode
+    - [Branding] Center main window on first launch
+    - [Build] Fix Windows build failure caused by invalid icon format
+    - [Update] Fix auto-update URLs pointing to wrong repository
 
     ⚠️ Note: This release is not code-signed. macOS users may need to right-click → Open to bypass Gatekeeper.
 
     <!--LANG:zh-CN-->
-    Teniulink Node v0.1.0 - 首次发布
+    Teniulink Node v0.1.1 - Access Token 登录
 
-    Teniulink Node 的首个正式版本，基于 Cherry Studio 的跨平台 AI 桌面助手。
+    ✨ 新功能
+    - [登录] 新增手动 Access Token 登录，作为浏览器登录的备选方式
 
-    ✨ 主要功能
-    - 多供应商 AI 对话（OpenAI、Claude、Gemini、Ollama 及 20+ 供应商）
-    - Teniu Cloud 集成，支持基于设备的连接管理
-    - MCP（模型上下文协议）服务器支持
-    - 知识库与 RAG（检索增强生成）
-    - AI 图像生成（DALL-E、Stable Diffusion 等）
-    - TipTap 富文本编辑器
-    - 多窗口支持（主窗口、迷你窗口、选择工具栏）
-    - OpenTelemetry 分布式追踪
-
-    📦 支持平台
-    - macOS: DMG + ZIP (arm64, x64)
-    - Windows: NSIS 安装包 + 便携版 (x64, arm64)
-    - Linux: AppImage + Deb + RPM (x64, arm64)
+    🐛 问题修复
+    - [品牌] 修复开发模式下 Dock 图标和应用名称显示
+    - [品牌] 首次启动时窗口居中显示
+    - [构建] 修复图标格式错误导致 Windows 构建失败
+    - [更新] 修复自动更新 URL 指向错误仓库
 
     ⚠️ 注意：此版本未进行代码签名。macOS 用户可能需要右键 → 打开来绕过 Gatekeeper。
     <!--LANG:END-->
