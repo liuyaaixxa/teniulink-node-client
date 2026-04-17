@@ -25,7 +25,6 @@ vi.mock('@shared/config/constant', () => ({
 
 vi.mock('../AuthService', () => ({
   authService: {
-    getSessionCookie: vi.fn(() => 'test-session-cookie'),
     getUserId: vi.fn(() => 1)
   }
 }))
@@ -381,7 +380,7 @@ describe('TeniuCloudService', () => {
         json: async () => ({ success: true, data: { token: 'full-plaintext-token-123' } })
       })
 
-      const result = await getDeviceTokenKey(1)
+      const result = await getDeviceTokenKey(1, 'test-access-token')
       expect(result.success).toBe(true)
       expect(result.token).toBe('full-plaintext-token-123')
     })
@@ -392,7 +391,7 @@ describe('TeniuCloudService', () => {
         json: async () => ({ success: true, data: { key: 'token-from-key-field' } })
       })
 
-      const result = await getDeviceTokenKey(2)
+      const result = await getDeviceTokenKey(2, 'test-access-token')
       expect(result.success).toBe(true)
       expect(result.token).toBe('token-from-key-field')
     })
@@ -403,7 +402,7 @@ describe('TeniuCloudService', () => {
         status: 401
       })
 
-      const result = await getDeviceTokenKey(1)
+      const result = await getDeviceTokenKey(1, 'test-access-token')
       expect(result.success).toBe(false)
       expect(result.error).toContain('Session expired')
     })
@@ -414,16 +413,13 @@ describe('TeniuCloudService', () => {
         status: 500
       })
 
-      const result = await getDeviceTokenKey(1)
+      const result = await getDeviceTokenKey(1, 'test-access-token')
       expect(result.success).toBe(false)
       expect(result.error).toBe('HTTP 500')
     })
 
     it('should return error when not logged in', async () => {
-      // Override the mock to return null cookie
-      const { authService } = await import('../AuthService')
-      vi.mocked(authService.getSessionCookie).mockReturnValueOnce(null)
-
+      // No sessionToken passed → should return not logged in error
       const result = await getDeviceTokenKey(1)
       expect(result.success).toBe(false)
       expect(result.error).toContain('Not logged in')
@@ -435,7 +431,7 @@ describe('TeniuCloudService', () => {
         json: async () => ({ success: false, message: 'Device not found' })
       })
 
-      const result = await getDeviceTokenKey(999)
+      const result = await getDeviceTokenKey(999, 'test-access-token')
       expect(result.success).toBe(false)
       expect(result.error).toBe('Device not found')
     })
@@ -446,7 +442,7 @@ describe('TeniuCloudService', () => {
         json: async () => ({ success: true, data: {} })
       })
 
-      const result = await getDeviceTokenKey(1)
+      const result = await getDeviceTokenKey(1, 'test-access-token')
       expect(result.success).toBe(false)
       expect(result.error).toContain('Token key not found')
     })

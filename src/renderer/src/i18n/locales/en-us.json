@@ -1874,15 +1874,20 @@
   "login_page": {
     "brand_name_highlight": "link",
     "brand_name_prefix": "Teniu",
-    "error_login_failed": "Login failed",
+    "browser_login": "Browser Login",
+    "browser_login_failed": "Browser login failed",
+    "browser_login_success": "Browser authorization successful",
+    "browser_login_timeout": "Browser login timed out, please try again",
+    "browser_login_waiting": "Waiting for browser authorization...",
     "error_network": "Network error, please check your connection",
     "network_badge": "Teniu Cloud Network",
-    "password_placeholder": "Password",
-    "password_required": "Please enter password",
-    "submit_button": "Start Login",
+    "or_divider": "OR",
     "subtitle": "Intelligent Gateway Node",
-    "username_placeholder": "Username",
-    "username_required": "Please enter username"
+    "token_invalid": "Invalid access token",
+    "token_login": "Login with Token",
+    "token_login_success": "Token login successful",
+    "token_placeholder": "Access Token",
+    "token_required": "Please enter access token"
   },
   "memory": {
     "actions": "Actions",

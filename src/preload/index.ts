@@ -149,15 +149,25 @@ const api = {
   getSystemInfo: (): Promise<SystemInfoResult | null> => ipcRenderer.invoke(IpcChannel.App_GetSystemInfo),
   mockCrashRenderProcess: () => ipcRenderer.invoke(IpcChannel.APP_CrashRenderProcess),
   // Auth
-  authLogin: (
-    username: string,
-    password: string,
+  authValidateToken: (
+    token: string,
     apiBase?: string
-  ): Promise<{ success: boolean; token?: string; user?: { username: string; userId?: number }; error?: string }> =>
-    ipcRenderer.invoke(IpcChannel.Auth_Login, username, password, apiBase),
+  ): Promise<{ success: boolean; user?: { id: number; username: string; displayName?: string }; error?: string }> =>
+    ipcRenderer.invoke(IpcChannel.Auth_ValidateToken, token, apiBase),
   authLogout: (): Promise<{ success: boolean; error?: string }> => ipcRenderer.invoke(IpcChannel.Auth_Logout),
   authCheckAuth: (token?: string): Promise<{ valid: boolean; error?: string }> =>
     ipcRenderer.invoke(IpcChannel.Auth_CheckAuth, token),
+  authStartBrowserLogin: (apiBase?: string): Promise<{ success: boolean; state?: string; error?: string }> =>
+    ipcRenderer.invoke(IpcChannel.Auth_StartBrowserLogin, apiBase),
+  authExchangeDesktopCode: (
+    code: string,
+    state: string
+  ): Promise<{
+    success: boolean
+    access_token?: string
+    user?: { id: number; username: string; displayName?: string; role?: number }
+    error?: string
+  }> => ipcRenderer.invoke(IpcChannel.Auth_ExchangeDesktopCode, code, state),
   // Teniu Cloud
   teniuCloudConnect: (
     apiUrl: string,

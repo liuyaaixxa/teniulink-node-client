@@ -38,13 +38,13 @@ vi.mock('react-i18next', () => ({
 }))
 
 describe('LoginPage', () => {
-  it('should render login form with username and password fields', async () => {
+  it('should render browser login button and token input', async () => {
     const { default: LoginPage } = await import('../LoginPage')
     render(<LoginPage />)
 
-    expect(screen.getByPlaceholderText('login_page.username_placeholder')).toBeInTheDocument()
-    expect(screen.getByPlaceholderText('login_page.password_placeholder')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /login_page\.submit_button/i })).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('login_page.token_placeholder')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /login_page\.browser_login/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /login_page\.token_login/i })).toBeInTheDocument()
   })
 
   it('should render brand name', async () => {

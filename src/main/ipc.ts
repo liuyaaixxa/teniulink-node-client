@@ -1216,11 +1216,15 @@ export async function registerIpc(mainWindow: BrowserWindow, app: Electron.App) 
   )
 
   // Auth
-  ipcMain.handle(IpcChannel.Auth_Login, (_, username: string, password: string, apiBase?: string) =>
-    authService.login(username, password, apiBase)
+  ipcMain.handle(IpcChannel.Auth_ValidateToken, (_, token: string, apiBase?: string) =>
+    authService.validateToken(token, apiBase)
   )
   ipcMain.handle(IpcChannel.Auth_Logout, () => authService.logout())
   ipcMain.handle(IpcChannel.Auth_CheckAuth, (_, token?: string) => authService.checkAuth(token))
+  ipcMain.handle(IpcChannel.Auth_StartBrowserLogin, (_, apiBase?: string) => authService.startBrowserLogin(apiBase))
+  ipcMain.handle(IpcChannel.Auth_ExchangeDesktopCode, (_, code: string, state: string) =>
+    authService.exchangeDesktopAuthCode(code, state)
+  )
 
   // Teniu Cloud
   ipcMain.handle(IpcChannel.TeniuCloud_Connect, (_, apiUrl: string, apiKey: string, serviceName?: string) =>

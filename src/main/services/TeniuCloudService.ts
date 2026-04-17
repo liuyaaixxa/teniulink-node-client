@@ -441,13 +441,11 @@ async function checkStatusWithEnv(domain?: string): Promise<ConnectionStatus> {
 
 /**
  * Get device tokens from Teniu Cloud backend API
- * Accepts an optional sessionToken from the renderer (preferred), falls back to AuthService cookie
+ * Requires a sessionToken (access token) from the renderer
  */
 export async function getDeviceTokens(sessionToken?: string, userId?: number): Promise<DeviceTokensResult> {
   try {
-    const authCookie = authService.getSessionCookie()
-    const cookie = sessionToken || authCookie
-    if (!cookie) {
+    if (!sessionToken) {
       return { success: false, tokens: [], error: 'Not logged in. Please login first.' }
     }
 
@@ -458,7 +456,7 @@ export async function getDeviceTokens(sessionToken?: string, userId?: number): P
     logger.debug(`Fetching device tokens from ${url} (userId=${uid})`)
 
     const headers: Record<string, string> = {
-      Cookie: `session=${cookie}`,
+      Authorization: sessionToken,
       'Content-Type': 'application/json'
     }
     if (uid) {
@@ -503,7 +501,7 @@ export async function getDeviceTokens(sessionToken?: string, userId?: number): P
 
 /**
  * Get the full plaintext token key for a specific device token
- * Accepts an optional sessionToken from the renderer (preferred), falls back to AuthService cookie
+ * Requires a sessionToken (access token) from the renderer
  */
 export async function getDeviceTokenKey(
   deviceId: number,
@@ -511,8 +509,7 @@ export async function getDeviceTokenKey(
   userId?: number
 ): Promise<{ success: boolean; token?: string; error?: string }> {
   try {
-    const cookie = sessionToken || authService.getSessionCookie()
-    if (!cookie) {
+    if (!sessionToken) {
       return { success: false, error: 'Not logged in. Please login first.' }
     }
 
@@ -523,7 +520,7 @@ export async function getDeviceTokenKey(
     logger.debug(`Fetching device token key for device ${deviceId} (userId=${uid})`)
 
     const headers: Record<string, string> = {
-      Cookie: `session=${cookie}`,
+      Authorization: sessionToken,
       'Content-Type': 'application/json'
     }
     if (uid) {

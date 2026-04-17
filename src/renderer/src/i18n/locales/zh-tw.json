@@ -1874,15 +1874,20 @@
   "login_page": {
     "brand_name_highlight": "link",
     "brand_name_prefix": "Teniu",
-    "error_login_failed": "登入失敗",
+    "browser_login": "瀏覽器登入",
+    "browser_login_failed": "瀏覽器登入失敗",
+    "browser_login_success": "瀏覽器授權成功",
+    "browser_login_timeout": "瀏覽器登入逾時，請重試",
+    "browser_login_waiting": "等待瀏覽器授權...",
     "error_network": "網路錯誤，請檢查連線",
     "network_badge": "Teniu 雲端網路",
-    "password_placeholder": "密碼",
-    "password_required": "請輸入密碼",
-    "submit_button": "開始登入",
+    "or_divider": "或",
     "subtitle": "智慧閘道節點",
-    "username_placeholder": "使用者名稱",
-    "username_required": "請輸入使用者名稱"
+    "token_invalid": "Access Token 無效",
+    "token_login": "Token 登入",
+    "token_login_success": "Token 登入成功",
+    "token_placeholder": "Access Token",
+    "token_required": "請輸入 Access Token"
   },
   "memory": {
     "actions": "操作",

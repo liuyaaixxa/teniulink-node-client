@@ -1,16 +1,11 @@
 import { useAppDispatch } from '@renderer/store'
 import { setAuthLogin } from '@renderer/store/settings'
-import { Button, Form, Input, message } from 'antd'
-import { Lock, User } from 'lucide-react'
+import { Button, Divider, Input, message } from 'antd'
+import { Globe, Key } from 'lucide-react'
 import type { FC } from 'react'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import styled, { keyframes } from 'styled-components'
-
-interface LoginFormValues {
-  username: string
-  password: string
-}
 
 // Stable node positions for the blockchain network background
 const NODES = [
@@ -49,36 +44,122 @@ for (let i = 0; i < NODES.length; i++) {
 }
 
 const LoginPage: FC = () => {
-  const [loading, setLoading] = useState(false)
+  const [tokenInput, setTokenInput] = useState('')
+  const [tokenLoginLoading, setTokenLoginLoading] = useState(false)
+  const [browserLoginLoading, setBrowserLoginLoading] = useState(false)
+  const browserLoginStateRef = useRef<string | null>(null)
+  const cleanupRef = useRef<(() => void) | null>(null)
   const dispatch = useAppDispatch()
-  const [form] = Form.useForm<LoginFormValues>()
   const { t } = useTranslation()
 
-  const handleLogin = useCallback(
-    async (values: LoginFormValues) => {
-      setLoading(true)
-      try {
-        const result = await window.api.authLogin(values.username, values.password)
-        if (result.success && result.token) {
-          dispatch(
-            setAuthLogin({
-              username: result.user?.username || values.username,
-              token: result.token,
-              loginTime: new Date().toISOString(),
-              userId: result.user?.userId
-            })
-          )
-        } else {
-          message.error(result.error || t('login_page.error_login_failed'))
-        }
-      } catch {
-        message.error(t('login_page.error_network'))
-      } finally {
-        setLoading(false)
+  // Cleanup browser login listener on unmount
+  useEffect(() => {
+    return () => {
+      cleanupRef.current?.()
+    }
+  }, [])
+
+  const handleBrowserLogin = useCallback(async () => {
+    setBrowserLoginLoading(true)
+
+    try {
+      const result = await window.api.authStartBrowserLogin()
+      if (!result.success || !result.state) {
+        message.error(result.error || t('login_page.browser_login_failed'))
+        setBrowserLoginLoading(false)
+        return
       }
-    },
-    [dispatch]
-  )
+
+      browserLoginStateRef.current = result.state
+
+      // Listen for deep link callback
+      const removeListener = window.api.protocol.onReceiveData(async (data) => {
+        try {
+          const url = new URL(data.url)
+          if (url.hostname !== 'auth') return
+
+          const params = new URLSearchParams(url.search)
+          const code = params.get('code')
+          const returnedState = params.get('state')
+
+          if (!code || !returnedState || returnedState !== browserLoginStateRef.current) return
+
+          const exchangeResult = await window.api.authExchangeDesktopCode(code, returnedState)
+
+          if (exchangeResult.success && exchangeResult.access_token && exchangeResult.user) {
+            dispatch(
+              setAuthLogin({
+                username: exchangeResult.user.username,
+                token: exchangeResult.access_token,
+                loginTime: new Date().toISOString(),
+                userId: exchangeResult.user.id
+              })
+            )
+            message.success(t('login_page.browser_login_success'))
+          } else {
+            message.error(exchangeResult.error || t('login_page.browser_login_failed'))
+          }
+        } catch {
+          message.error(t('login_page.error_network'))
+        } finally {
+          setBrowserLoginLoading(false)
+          cleanup()
+        }
+      })
+
+      // Timeout after 10 minutes
+      const timeoutId = setTimeout(
+        () => {
+          message.warning(t('login_page.browser_login_timeout'))
+          setBrowserLoginLoading(false)
+          cleanup()
+        },
+        10 * 60 * 1000
+      )
+
+      const cleanup = () => {
+        removeListener()
+        clearTimeout(timeoutId)
+        browserLoginStateRef.current = null
+        cleanupRef.current = null
+      }
+
+      cleanupRef.current = cleanup
+    } catch {
+      message.error(t('login_page.error_network'))
+      setBrowserLoginLoading(false)
+    }
+  }, [dispatch, t])
+
+  const handleTokenLogin = useCallback(async () => {
+    const token = tokenInput.trim()
+    if (!token) {
+      message.warning(t('login_page.token_required'))
+      return
+    }
+
+    setTokenLoginLoading(true)
+    try {
+      const result = await window.api.authValidateToken(token)
+      if (result.success && result.user) {
+        dispatch(
+          setAuthLogin({
+            username: result.user.username,
+            token,
+            loginTime: new Date().toISOString(),
+            userId: result.user.id
+          })
+        )
+        message.success(t('login_page.token_login_success'))
+      } else {
+        message.error(result.error || t('login_page.token_invalid'))
+      }
+    } catch {
+      message.error(t('login_page.error_network'))
+    } finally {
+      setTokenLoginLoading(false)
+    }
+  }, [tokenInput, dispatch, t])
 
   const networkSvg = useMemo(
     () => (
@@ -109,26 +190,26 @@ const LoginPage: FC = () => {
             <Subtitle>{t('login_page.subtitle')}</Subtitle>
           </LogoSection>
           <FormSection>
-            <StyledForm form={form} onFinish={handleLogin} layout="vertical" size="middle">
-              <Form.Item name="username" rules={[{ required: true, message: t('login_page.username_required') }]}>
-                <StyledInput
-                  prefix={<User size={14} color="#64748b" />}
-                  placeholder={t('login_page.username_placeholder')}
-                  autoFocus
-                />
-              </Form.Item>
-              <Form.Item name="password" rules={[{ required: true, message: t('login_page.password_required') }]}>
-                <StyledPasswordInput
-                  prefix={<Lock size={14} color="#64748b" />}
-                  placeholder={t('login_page.password_placeholder')}
-                />
-              </Form.Item>
-              <Form.Item style={{ marginBottom: 0, marginTop: 4 }}>
-                <LoginButton type="primary" htmlType="submit" loading={loading} block>
-                  {t('login_page.submit_button')}
-                </LoginButton>
-              </Form.Item>
-            </StyledForm>
+            <BrowserLoginButton
+              icon={<Globe size={14} />}
+              onClick={handleBrowserLogin}
+              loading={browserLoginLoading}
+              block>
+              {browserLoginLoading ? t('login_page.browser_login_waiting') : t('login_page.browser_login')}
+            </BrowserLoginButton>
+            <StyledDivider>{t('login_page.or_divider', 'OR')}</StyledDivider>
+            <TokenInputGroup>
+              <StyledInput
+                prefix={<Key size={14} color="#64748b" />}
+                placeholder={t('login_page.token_placeholder')}
+                value={tokenInput}
+                onChange={(e) => setTokenInput(e.target.value)}
+                onPressEnter={handleTokenLogin}
+              />
+              <TokenLoginButton type="primary" onClick={handleTokenLogin} loading={tokenLoginLoading} block>
+                {t('login_page.token_login')}
+              </TokenLoginButton>
+            </TokenInputGroup>
           </FormSection>
           <StatusBadge>
             <StatusDot />
@@ -264,15 +345,6 @@ const FormSection = styled.div`
   margin-top: 4px;
 `
 
-const StyledForm = styled(Form<LoginFormValues>)`
-  .ant-form-item {
-    margin-bottom: 12px;
-  }
-  .ant-form-item-explain-error {
-    font-size: 11px;
-  }
-`
-
 const inputStyles = `
   background: rgba(255, 255, 255, 0.04) !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
@@ -301,17 +373,41 @@ const StyledInput = styled(Input)`
   ${inputStyles}
 `
 
-const StyledPasswordInput = styled(Input.Password)`
-  ${inputStyles}
-  .ant-input-password-icon {
-    color: #475569 !important;
-    &:hover {
-      color: #94a3b8 !important;
+const TokenInputGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+`
+
+const TokenLoginButton = styled(Button)`
+  height: 38px;
+  border-radius: 10px;
+  font-weight: 500;
+  font-size: 13px;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  color: #94a3b8 !important;
+  transition: all 0.3s;
+  &:hover {
+    border-color: rgba(0, 255, 136, 0.4) !important;
+    color: #e2e8f0 !important;
+    background: rgba(255, 255, 255, 0.06) !important;
+  }
+`
+
+const StyledDivider = styled(Divider)`
+  &.ant-divider {
+    margin: 12px 0;
+    border-color: rgba(255, 255, 255, 0.08);
+    .ant-divider-inner-text {
+      font-size: 11px;
+      color: #475569;
+      padding: 0 12px;
     }
   }
 `
 
-const LoginButton = styled(Button)`
+const BrowserLoginButton = styled(Button)`
   height: 38px;
   border-radius: 10px;
   font-weight: 600;
@@ -327,6 +423,10 @@ const LoginButton = styled(Button)`
   }
   &:active {
     transform: translateY(0);
+  }
+  .anticon,
+  .lucide {
+    color: #050508;
   }
 `
 

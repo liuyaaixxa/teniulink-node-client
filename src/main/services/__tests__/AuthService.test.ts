@@ -22,63 +22,56 @@ describe('AuthService', () => {
     vi.restoreAllMocks()
   })
 
-  describe('login', () => {
-    it('should return success when API responds with valid data', async () => {
-      const mockHeaders = new Headers()
-      mockHeaders.set('set-cookie', 'session=test-session-cookie; Path=/; HttpOnly')
+  describe('validateToken', () => {
+    it('should return success when API responds with valid user data', async () => {
       const mockResponse = {
         ok: true,
-        headers: mockHeaders,
         json: () =>
           Promise.resolve({
             success: true,
-            message: '',
-            data: { username: 'testuser', display_name: 'Test User', id: 1, role: 1 }
-          }),
-        text: () => Promise.resolve('')
+            data: { id: 1, username: 'testuser', display_name: 'Test User' }
+          })
       }
       vi.spyOn(globalThis, 'fetch').mockResolvedValue(mockResponse as any)
 
-      const result = await authService.login('testuser', 'password123')
+      const result = await authService.validateToken('valid-access-token')
       expect(result.success).toBe(true)
       expect(result.user?.username).toBe('testuser')
+      expect(result.user?.id).toBe(1)
     })
 
     it('should return error when API responds with success=false', async () => {
       const mockResponse = {
         ok: true,
-        headers: new Headers(),
         json: () =>
           Promise.resolve({
             success: false,
-            message: '用户名或密码错误'
-          }),
-        text: () => Promise.resolve('')
+            message: 'Invalid token'
+          })
       }
       vi.spyOn(globalThis, 'fetch').mockResolvedValue(mockResponse as any)
 
-      const result = await authService.login('testuser', 'wrongpass')
+      const result = await authService.validateToken('invalid-token')
       expect(result.success).toBe(false)
-      expect(result.error).toBe('用户名或密码错误')
+      expect(result.error).toBe('Invalid token')
     })
 
     it('should return error when API responds with non-ok status', async () => {
       const mockResponse = {
         ok: false,
-        status: 401,
-        text: () => Promise.resolve('Unauthorized')
+        status: 401
       }
       vi.spyOn(globalThis, 'fetch').mockResolvedValue(mockResponse as any)
 
-      const result = await authService.login('testuser', 'wrongpass')
+      const result = await authService.validateToken('expired-token')
       expect(result.success).toBe(false)
-      expect(result.error).toContain('401')
+      expect(result.error).toContain('Invalid access token')
     })
 
     it('should return error on network failure', async () => {
       vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('ECONNREFUSED'))
 
-      const result = await authService.login('testuser', 'password123')
+      const result = await authService.validateToken('some-token')
       expect(result.success).toBe(false)
       expect(result.error).toBe('ECONNREFUSED')
     })

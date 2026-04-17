@@ -1874,15 +1874,20 @@
   "login_page": {
     "brand_name_highlight": "link",
     "brand_name_prefix": "Teniu",
-    "error_login_failed": "登录失败",
+    "browser_login": "浏览器登录",
+    "browser_login_failed": "浏览器登录失败",
+    "browser_login_success": "浏览器授权成功",
+    "browser_login_timeout": "浏览器登录超时，请重试",
+    "browser_login_waiting": "等待浏览器授权...",
     "error_network": "网络错误，请检查连接",
     "network_badge": "Teniu 云端网络",
-    "password_placeholder": "密码",
-    "password_required": "请输入密码",
-    "submit_button": "开始登录",
+    "or_divider": "或",
     "subtitle": "智能网关节点",
-    "username_placeholder": "用户名",
-    "username_required": "请输入用户名"
+    "token_invalid": "Access Token 无效",
+    "token_login": "Token 登录",
+    "token_login_success": "Token 登录成功",
+    "token_placeholder": "Access Token",
+    "token_required": "请输入 Access Token"
   },
   "memory": {
     "actions": "操作",

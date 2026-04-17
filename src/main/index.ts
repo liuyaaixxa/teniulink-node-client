@@ -113,6 +113,17 @@ app.on('web-contents-created', (_, webContents) => {
   })
 })
 
+// Handle EPIPE errors gracefully in all modes (dev + prod)
+// EPIPE occurs when writing to a closed pipe (e.g., stdout during hot-reload)
+process.stdout?.on?.('error', (err: NodeJS.ErrnoException) => {
+  if (err.code === 'EPIPE') return
+  throw err
+})
+process.stderr?.on?.('error', (err: NodeJS.ErrnoException) => {
+  if (err.code === 'EPIPE') return
+  throw err
+})
+
 // in production mode, handle uncaught exception and unhandled rejection globally
 if (!isDev) {
   // handle uncaught exception

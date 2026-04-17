@@ -54,9 +54,11 @@ export enum IpcChannel {
   App_SetUseSystemTitleBar = 'app:set-use-system-title-bar',
 
   // Auth
-  Auth_Login = 'auth:login',
+  Auth_ValidateToken = 'auth:validate-token',
   Auth_Logout = 'auth:logout',
   Auth_CheckAuth = 'auth:check-auth',
+  Auth_StartBrowserLogin = 'auth:start-browser-login',
+  Auth_ExchangeDesktopCode = 'auth:exchange-desktop-code',
 
   // Teniu Cloud
   TeniuCloud_Connect = 'teniu-cloud:connect',
