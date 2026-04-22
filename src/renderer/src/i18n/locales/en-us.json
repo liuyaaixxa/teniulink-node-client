@@ -2671,15 +2671,15 @@
     },
     "skip": "Skip",
     "toast": {
-      "connected": "Successfully connected to CherryIN"
+      "connected": "Successfully connected to Teniu.AI"
     },
     "welcome": {
-      "login_cherryin": "Login with CherryIN",
+      "login_cherryin": "Login to Teniu.AI",
       "or_continue_with": "OR CONTINUE WITH",
       "other_provider": "Choose Other Providers",
       "select_other_provider": "Select Other Provider",
       "setup_hint": "Please configure at least one provider for the best experience",
-      "subtitle": "Enjoy top-tier AI services with CherryIN",
+      "subtitle": "Teniu.AI enables global users to easily share top-tier AI services",
       "title": "Welcome to Teniulink Node"
     }
   },

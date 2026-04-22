@@ -1,12 +1,12 @@
 {
   "name": "TeniulinkNode",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "description": "A powerful AI assistant for producer.",
   "desktopName": "CherryStudio.desktop",
   "main": "./out/main/index.js",
-  "author": "support@cherry-ai.com",
-  "homepage": "https://github.com/CherryHQ/cherry-studio",
+  "author": "support@teniuapi.online",
+  "homepage": "https://github.com/liuyaaixxa/teniulink-node-client",
   "engines": {
     "node": ">=24.11.1"
   },

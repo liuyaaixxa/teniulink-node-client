@@ -2671,15 +2671,15 @@
     },
     "skip": "跳過",
     "toast": {
-      "connected": "成功連接到 CherryIN"
+      "connected": "成功連接到 Teniu.AI"
     },
     "welcome": {
-      "login_cherryin": "使用 CherryIN 登入",
+      "login_cherryin": "馬上登入 Teniu.AI",
       "or_continue_with": "或繼續使用",
       "other_provider": "選擇其他供應商",
       "select_other_provider": "選擇其他供應商",
       "setup_hint": "請至少設定一個提供者以獲得最佳體驗",
-      "subtitle": "享受頂尖 AI 服務，盡在 CherryIN",
+      "subtitle": "Teniu.AI 全球用戶能夠輕鬆共享頂級AI服務",
       "title": "歡迎來到 Teniulink Node"
     }
   },
