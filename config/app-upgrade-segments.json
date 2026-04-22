@@ -12,7 +12,7 @@
       "channelTemplates": {
         "latest": {
           "feedTemplates": {
-            "github": "https://github.com/CherryHQ/cherry-studio/releases/download/{{tag}}",
+            "github": "https://github.com/liuyaaixxa/teniulink-node-client/releases/download/{{tag}}",
             "gitcode": "https://gitcode.com/CherryHQ/cherry-studio/releases/download/{{tag}}"
           }
         }
@@ -30,20 +30,20 @@
       "channelTemplates": {
         "latest": {
           "feedTemplates": {
-            "github": "https://github.com/CherryHQ/cherry-studio/releases/download/{{tag}}",
+            "github": "https://github.com/liuyaaixxa/teniulink-node-client/releases/download/{{tag}}",
             "gitcode": "https://gitcode.com/CherryHQ/cherry-studio/releases/download/{{tag}}"
           }
         },
         "rc": {
           "feedTemplates": {
-            "github": "https://github.com/CherryHQ/cherry-studio/releases/download/{{tag}}",
-            "gitcode": "https://github.com/CherryHQ/cherry-studio/releases/download/{{tag}}"
+            "github": "https://github.com/liuyaaixxa/teniulink-node-client/releases/download/{{tag}}",
+            "gitcode": "https://github.com/liuyaaixxa/teniulink-node-client/releases/download/{{tag}}"
           }
         },
         "beta": {
           "feedTemplates": {
-            "github": "https://github.com/CherryHQ/cherry-studio/releases/download/{{tag}}",
-            "gitcode": "https://github.com/CherryHQ/cherry-studio/releases/download/{{tag}}"
+            "github": "https://github.com/liuyaaixxa/teniulink-node-client/releases/download/{{tag}}",
+            "gitcode": "https://github.com/liuyaaixxa/teniulink-node-client/releases/download/{{tag}}"
           }
         }
       }
@@ -60,7 +60,7 @@
       "channelTemplates": {
         "latest": {
           "feedTemplates": {
-            "github": "https://github.com/CherryHQ/cherry-studio/releases/download/{{tag}}",
+            "github": "https://github.com/liuyaaixxa/teniulink-node-client/releases/download/{{tag}}",
             "gitcode": "https://gitcode.com/CherryHQ/cherry-studio/releases/download/{{tag}}"
           }
         }
@@ -78,20 +78,20 @@
       "channelTemplates": {
         "latest": {
           "feedTemplates": {
-            "github": "https://github.com/CherryHQ/cherry-studio/releases/download/{{tag}}",
+            "github": "https://github.com/liuyaaixxa/teniulink-node-client/releases/download/{{tag}}",
             "gitcode": "https://gitcode.com/CherryHQ/cherry-studio/releases/download/{{tag}}"
           }
         },
         "rc": {
           "feedTemplates": {
-            "github": "https://github.com/CherryHQ/cherry-studio/releases/download/{{tag}}",
-            "gitcode": "https://github.com/CherryHQ/cherry-studio/releases/download/{{tag}}"
+            "github": "https://github.com/liuyaaixxa/teniulink-node-client/releases/download/{{tag}}",
+            "gitcode": "https://github.com/liuyaaixxa/teniulink-node-client/releases/download/{{tag}}"
           }
         },
         "beta": {
           "feedTemplates": {
-            "github": "https://github.com/CherryHQ/cherry-studio/releases/download/{{tag}}",
-            "gitcode": "https://github.com/CherryHQ/cherry-studio/releases/download/{{tag}}"
+            "github": "https://github.com/liuyaaixxa/teniulink-node-client/releases/download/{{tag}}",
+            "gitcode": "https://github.com/liuyaaixxa/teniulink-node-client/releases/download/{{tag}}"
           }
         }
       }

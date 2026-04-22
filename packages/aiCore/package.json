@@ -20,12 +20,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/CherryHQ/cherry-studio.git"
+    "url": "git+https://github.com/liuyaaixxa/teniulink-node-client.git"
   },
   "bugs": {
-    "url": "https://github.com/CherryHQ/cherry-studio/issues"
+    "url": "https://github.com/liuyaaixxa/teniulink-node-client/issues"
   },
-  "homepage": "https://github.com/CherryHQ/cherry-studio#readme",
+  "homepage": "https://github.com/liuyaaixxa/teniulink-node-client#readme",
   "peerDependencies": {
     "@ai-sdk/google": "^3.0.33",
     "@ai-sdk/openai": "^3.0.36",

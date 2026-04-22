@@ -15,7 +15,7 @@ const swaggerOptions: swaggerJSDoc.Options = {
       description: 'OpenAI-compatible API for Cherry Studio with additional Cherry-specific endpoints',
       contact: {
         name: 'Cherry Studio',
-        url: 'https://github.com/CherryHQ/cherry-studio'
+        url: 'https://github.com/liuyaaixxa/teniulink-node-client'
       }
     },
     servers: [

@@ -28,7 +28,7 @@ export class McpOAuthClientProvider implements OAuthClientProvider {
       callbackPath: options.callbackPath || '/oauth/callback',
       configDir: options.configDir || configDir,
       clientName: options.clientName || 'Teniulink Node',
-      clientUri: options.clientUri || 'https://github.com/CherryHQ/cherry-studio'
+      clientUri: options.clientUri || 'https://github.com/liuyaaixxa/teniulink-node-client'
     }
     this.storage = new JsonFileStorage(this.config.serverUrlHash, this.config.configDir)
   }

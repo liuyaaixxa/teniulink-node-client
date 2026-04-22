@@ -5,14 +5,14 @@
   "keywords": ["ai-sdk", "provider", "cherryin", "vercel-ai-sdk", "cherry-studio"],
   "author": "Cherry Studio",
   "license": "MIT",
-  "homepage": "https://github.com/CherryHQ/cherry-studio",
+  "homepage": "https://github.com/liuyaaixxa/teniulink-node-client",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/CherryHQ/cherry-studio.git",
+    "url": "git+https://github.com/liuyaaixxa/teniulink-node-client.git",
     "directory": "packages/ai-sdk-provider"
   },
   "bugs": {
-    "url": "https://github.com/CherryHQ/cherry-studio/issues"
+    "url": "https://github.com/liuyaaixxa/teniulink-node-client/issues"
   },
   "type": "module",
   "main": "dist/index.cjs",

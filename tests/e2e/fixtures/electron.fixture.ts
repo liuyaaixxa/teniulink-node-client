@@ -1,10 +1,8 @@
+import * as path from 'path'
+
 import type { ElectronApplication, Page } from '@playwright/test'
 import { _electron as electron, test as base } from '@playwright/test'
 
-/**
- * Custom fixtures for Electron e2e testing.
- * Provides electronApp and mainWindow to all tests.
- */
 export type ElectronFixtures = {
   electronApp: ElectronApplication
   mainWindow: Page
@@ -12,38 +10,44 @@ export type ElectronFixtures = {
 
 export const test = base.extend<ElectronFixtures>({
   electronApp: async ({}, use) => {
-    // Launch Electron app from project root
-    // The args ['.'] tells Electron to load the app from current directory
+    const rendererUrl = `file://${path.resolve('out/renderer/index.html')}`
     const electronApp = await electron.launch({
       args: ['.'],
       env: {
         ...process.env,
-        NODE_ENV: 'development'
+        NODE_ENV: 'development',
+        ELECTRON_RENDERER_URL: rendererUrl
       },
       timeout: 60000
     })
 
     await use(electronApp)
 
-    // Cleanup: close the app after test
     await electronApp.close()
   },
 
   mainWindow: async ({ electronApp }, use) => {
-    // Wait for the main window (title: "Cherry Studio", not "Quick Assistant")
-    // On Mac, the app may create miniWindow for QuickAssistant with different title
-    const mainWindow = await electronApp.waitForEvent('window', {
-      predicate: async (window) => {
+    const findMainWindow = async (): Promise<Page | null> => {
+      for (const window of electronApp.windows()) {
         const title = await window.title()
-        return title === 'Cherry Studio'
-      },
-      timeout: 60000
-    })
+        if (title === 'Teniulink Node') return window
+      }
+      return null
+    }
 
-    // Wait for React app to mount
+    let mainWindow = await findMainWindow()
+
+    if (!mainWindow) {
+      mainWindow = await electronApp.waitForEvent('window', {
+        predicate: async (window) => {
+          const title = await window.title()
+          return title === 'Teniulink Node'
+        },
+        timeout: 60000
+      })
+    }
+
     await mainWindow.waitForSelector('#root', { state: 'attached', timeout: 60000 })
-
-    // Wait for initial content to load
     await mainWindow.waitForLoadState('domcontentloaded')
 
     await use(mainWindow)

@@ -414,7 +414,7 @@ await client.streamObject({
 ## 📚 相关资源
 
 - [Vercel AI SDK 文档](https://ai-sdk.dev/)
-- [Cherry Studio 项目](https://github.com/CherryHQ/cherry-studio)
+- [Teniulink Node 项目](https://github.com/liuyaaixxa/teniulink-node-client)
 - [AI SDK Providers](https://ai-sdk.dev/providers/ai-sdk-providers)
 
 ## 未来版本
@@ -426,7 +426,7 @@ await client.streamObject({
 
 ## 📄 License
 
-MIT License - 详见 [LICENSE](https://github.com/CherryHQ/cherry-studio/blob/main/LICENSE) 文件
+MIT License - 详见 [LICENSE](https://github.com/liuyaaixxa/teniulink-node-client/blob/main/LICENSE) 文件
 
 ---
 
