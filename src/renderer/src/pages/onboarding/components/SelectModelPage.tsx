@@ -4,7 +4,7 @@ import { ArrowLeft } from 'lucide-react'
 import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import type { OnboardingStep } from '../OnboardingPage'
+type OnboardingStep = 'welcome' | 'select-model'
 
 interface SelectModelPageProps {
   cherryInLoggedIn: boolean
