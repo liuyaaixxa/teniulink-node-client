@@ -278,7 +278,7 @@ const TeniuCloudSettings: FC = () => {
 
   const handleCopyUrl = useCallback(() => {
     if (serviceUrl) {
-      navigator.clipboard.writeText(serviceUrl)
+      void navigator.clipboard.writeText(serviceUrl)
       window.toast.success(t('teniuCloud.messages.urlCopied'))
     }
   }, [serviceUrl, t])

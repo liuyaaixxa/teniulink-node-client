@@ -49,7 +49,7 @@ const ApiServerSettings: FC = () => {
         setSystemInfoLoading(false)
       }
     }
-    fetchSystemInfo()
+    void fetchSystemInfo()
   }, [])
 
   const handleApiServerToggle = async (enabled: boolean) => {
