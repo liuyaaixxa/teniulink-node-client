@@ -52,8 +52,8 @@ export class WindowService {
     }
 
     const mainWindowState = windowStateKeeper({
-      defaultWidth: MIN_WINDOW_WIDTH,
-      defaultHeight: MIN_WINDOW_HEIGHT,
+      defaultWidth: 1223,
+      defaultHeight: 709,
       fullScreen: false,
       maximize: false
     })
@@ -64,7 +64,18 @@ export class WindowService {
       mainWindowBackgroundColor = nativeTheme.shouldUseDarkColors ? '#181818' : '#FFFFFF'
     }
 
-    const hasPosition = mainWindowState.x !== undefined && mainWindowState.y !== undefined
+    const hasPosition =
+      mainWindowState.x !== undefined &&
+      mainWindowState.y !== undefined &&
+      screen.getAllDisplays().some((d) => {
+        const { x, y, width, height } = d.bounds
+        return (
+          mainWindowState.x >= x &&
+          mainWindowState.y >= y &&
+          mainWindowState.x <= x + width &&
+          mainWindowState.y <= y + height
+        )
+      })
     this.mainWindow = new BrowserWindow({
       ...(hasPosition ? { x: mainWindowState.x, y: mainWindowState.y } : { center: true }),
       width: mainWindowState.width,
@@ -191,6 +202,21 @@ export class WindowService {
       // show window only when laucn to tray not set
       const isLaunchToTray = configManager.getLaunchToTray()
       if (!isLaunchToTray) {
+        // If window position is off-screen (e.g. external display disconnected),
+        // center it before showing so it doesn't appear in the corner
+        const [wx, wy] = mainWindow.getPosition()
+        const visible = screen
+          .getAllDisplays()
+          .some(
+            (d) =>
+              wx >= d.bounds.x &&
+              wy >= d.bounds.y &&
+              wx <= d.bounds.x + d.bounds.width &&
+              wy <= d.bounds.y + d.bounds.height
+          )
+        if (!visible) {
+          mainWindow.center()
+        }
         //[mac]hacky-fix: miniWindow set visibleOnFullScreen:true will cause dock icon disappeared
         void app.dock?.show()
         mainWindow.show()
