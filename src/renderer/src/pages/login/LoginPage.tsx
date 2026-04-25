@@ -7,42 +7,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import styled, { keyframes } from 'styled-components'
 
-// Stable node positions for the blockchain network background
-const NODES = [
-  { x: 8, y: 12 },
-  { x: 25, y: 8 },
-  { x: 45, y: 15 },
-  { x: 70, y: 10 },
-  { x: 88, y: 18 },
-  { x: 15, y: 35 },
-  { x: 38, y: 42 },
-  { x: 62, y: 38 },
-  { x: 82, y: 45 },
-  { x: 95, y: 32 },
-  { x: 5, y: 58 },
-  { x: 22, y: 65 },
-  { x: 50, y: 60 },
-  { x: 75, y: 62 },
-  { x: 92, y: 55 },
-  { x: 12, y: 82 },
-  { x: 35, y: 85 },
-  { x: 55, y: 78 },
-  { x: 78, y: 88 },
-  { x: 90, y: 75 }
-]
-
-// Connect nodes that are reasonably close (within 30% distance)
-const EDGES: [number, number][] = []
-for (let i = 0; i < NODES.length; i++) {
-  for (let j = i + 1; j < NODES.length; j++) {
-    const dx = NODES[i].x - NODES[j].x
-    const dy = NODES[i].y - NODES[j].y
-    if (Math.sqrt(dx * dx + dy * dy) < 30) {
-      EDGES.push([i, j])
-    }
-  }
-}
-
 const LoginPage: FC = () => {
   const [tokenInput, setTokenInput] = useState('')
   const [tokenLoginLoading, setTokenLoginLoading] = useState(false)
@@ -53,7 +17,6 @@ const LoginPage: FC = () => {
   const dispatch = useAppDispatch()
   const { t } = useTranslation()
 
-  // Cleanup browser login listener on unmount
   useEffect(() => {
     return () => {
       cleanupRef.current?.()
@@ -89,7 +52,6 @@ const LoginPage: FC = () => {
 
       browserLoginStateRef.current = result.state
 
-      // Listen for deep link callback
       const removeListener = window.api.protocol.onReceiveData(async (data) => {
         try {
           const url = new URL(data.url)
@@ -169,28 +131,74 @@ const LoginPage: FC = () => {
     }
   }, [tokenInput, dispatch, t])
 
-  const networkSvg = useMemo(
-    () => (
-      <NetworkBg viewBox="0 0 100 100" preserveAspectRatio="none">
-        {EDGES.map(([a, b], i) => (
-          <NetworkLine key={`e${i}`} x1={NODES[a].x} y1={NODES[a].y} x2={NODES[b].x} y2={NODES[b].y} $delay={i * 0.3} />
-        ))}
-        {NODES.map((n, i) => (
-          <NetworkNode key={`n${i}`} cx={n.x} cy={n.y} r={0.6} $delay={i * 0.2} />
-        ))}
-      </NetworkBg>
-    ),
+  const sparkles = useMemo(
+    () =>
+      Array.from({ length: 16 }).map((_, i) => (
+        <Sparkle
+          key={i}
+          $left={5 + Math.random() * 90}
+          $bottom={10 + Math.random() * 40}
+          $size={2 + Math.random() * 3}
+          $duration={3 + Math.random() * 4}
+          $delay={Math.random() * 5}
+        />
+      )),
     []
   )
 
   return (
     <PageContainer>
-      <GlowBg />
-      {networkSvg}
+      <SkyBg />
+      <SunGlow />
+      {sparkles}
+      <WaveSvg viewBox="0 0 1440 320" preserveAspectRatio="none">
+        <WavePath
+          $animDuration={8}
+          d="M0,160 C120,200 240,100 360,120 C480,140 600,220 720,180 C840,140 960,100 1080,140 C1200,180 1320,220 1440,180 L1440,320 L0,320 Z"
+          $color="#38bdf8"
+          $opacity={0.25}
+        />
+        <WavePath
+          $animDuration={6}
+          $animOffset={-2}
+          d="M0,120 C100,80 200,160 300,140 C400,120 500,60 600,100 C700,140 800,180 900,140 C1000,100 1100,60 1200,100 C1300,140 1400,160 1440,130 L1440,320 L0,320 Z"
+          $color="#7dd3fc"
+          $opacity={0.2}
+        />
+        <WavePath
+          $animDuration={7}
+          $animOffset={-4}
+          d="M0,100 C80,70 160,130 240,100 C320,70 400,130 480,100 C560,70 640,130 720,100 C800,70 880,130 960,100 C1040,70 1120,130 1200,100 C1280,70 1360,130 1440,100 L1440,320 L0,320 Z"
+          $color="#bae6fd"
+          $opacity={0.15}
+        />
+      </WaveSvg>
       <LoginCard>
         <CardGlow />
         <CardContent>
           <LogoSection>
+            <AiIcon>
+              <svg width="26" height="26" viewBox="0 0 32 32" fill="none">
+                <polygon
+                  points="16,2 28,8 28,20 16,26 4,20 4,8"
+                  fill="none"
+                  stroke="#fff"
+                  strokeWidth="1.8"
+                  strokeLinejoin="round"
+                  opacity="0.9"
+                />
+                <circle cx="12" cy="10" r="1.6" fill="#fff" opacity="0.8" />
+                <circle cx="20" cy="10" r="1.6" fill="#fff" opacity="0.8" />
+                <circle cx="9" cy="16" r="1.6" fill="#fff" opacity="0.8" />
+                <circle cx="23" cy="16" r="1.6" fill="#fff" opacity="0.8" />
+                <circle cx="16" cy="21" r="1.6" fill="#fff" opacity="0.8" />
+                <line x1="12" y1="10" x2="20" y2="10" stroke="#fff" strokeWidth="1.2" opacity="0.5" />
+                <line x1="12" y1="10" x2="9" y2="16" stroke="#fff" strokeWidth="1.2" opacity="0.5" />
+                <line x1="20" y1="10" x2="23" y2="16" stroke="#fff" strokeWidth="1.2" opacity="0.5" />
+                <line x1="9" y1="16" x2="16" y2="21" stroke="#fff" strokeWidth="1.2" opacity="0.5" />
+                <line x1="23" y1="16" x2="16" y2="21" stroke="#fff" strokeWidth="1.2" opacity="0.5" />
+              </svg>
+            </AiIcon>
             <BrandName>
               {t('login_page.brand_name_prefix')}
               <BrandHighlight>{t('login_page.brand_name_highlight')}</BrandHighlight>
@@ -209,7 +217,7 @@ const LoginPage: FC = () => {
             </BrowserLoginButton>
             <StyledDivider>{t('login_page.or_divider', 'OR')}</StyledDivider>
             <TokenInputGroup>
-              <StyledInput
+              <TokenInput
                 prefix={<Key size={14} color="#64748b" />}
                 placeholder={t('login_page.token_placeholder')}
                 value={tokenInput}
@@ -231,24 +239,32 @@ const LoginPage: FC = () => {
   )
 }
 
-const glowPulse = keyframes`
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 1; }
+const sunPulse = keyframes`
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.15); }
 `
 
-const linePulse = keyframes`
-  0%, 100% { opacity: 0.06; stroke: #00ff88; }
-  50% { opacity: 0.2; stroke: #00a8ff; }
+const waveSlide = keyframes`
+  0% { transform: translateX(0) translateY(0); }
+  50% { transform: translateX(-25%) translateY(6px); }
+  100% { transform: translateX(-50%) translateY(0); }
 `
 
-const nodePulse = keyframes`
-  0%, 100% { opacity: 0.3; r: 0.5; }
-  50% { opacity: 0.8; r: 0.8; }
+const sparkleFloat = keyframes`
+  0%, 100% { transform: translateY(0) translateX(0) scale(1); opacity: 0.1; }
+  25% { transform: translateY(-50px) translateX(10px) scale(1.8); opacity: 0.7; }
+  50% { transform: translateY(-25px) translateX(-8px) scale(1.1); opacity: 0.3; }
+  75% { transform: translateY(-65px) translateX(15px) scale(1.5); opacity: 0.5; }
+`
+
+const iconGlow = keyframes`
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.06); }
 `
 
 const dotPulse = keyframes`
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+  50% { opacity: 0.25; }
 `
 
 const PageContainer = styled.div`
@@ -257,52 +273,75 @@ const PageContainer = styled.div`
   justify-content: center;
   width: 100vw;
   height: 100vh;
-  background: #050508;
+  background: linear-gradient(180deg, #f0f9ff 0%, #e0f2fe 15%, #bae6fd 45%, #7dd3fc 75%, #38bdf8 100%);
   position: relative;
   overflow: hidden;
   -webkit-app-region: drag;
 `
 
-const GlowBg = styled.div`
+const SkyBg = styled.div`
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse at 30% 20%, rgba(0, 255, 136, 0.08) 0%, transparent 50%),
-    radial-gradient(ellipse at 70% 80%, rgba(0, 168, 255, 0.06) 0%, transparent 50%);
-  animation: ${glowPulse} 6s ease-in-out infinite;
+  background: linear-gradient(180deg, #f8faff 0%, #e0f2fe 30%, #bae6fd 60%, #7dd3fc 100%);
   pointer-events: none;
 `
 
-const NetworkBg = styled.svg`
+const SunGlow = styled.div`
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+  top: -40px;
+  right: 12%;
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.7) 0%, rgba(253, 224, 71, 0.15) 30%, transparent 70%);
+  filter: blur(40px);
+  pointer-events: none;
+  animation: ${sunPulse} 6s ease-in-out infinite;
+`
+
+const Sparkle = styled.div<{ $left: number; $bottom: number; $size: number; $duration: number; $delay: number }>`
+  position: absolute;
+  left: ${({ $left }) => $left}%;
+  bottom: ${({ $bottom }) => $bottom}%;
+  width: ${({ $size }) => $size}px;
+  height: ${({ $size }) => $size}px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.65);
+  pointer-events: none;
+  animation: ${sparkleFloat} ${({ $duration }) => $duration}s ease-in-out infinite;
+  animation-delay: ${({ $delay }) => $delay}s;
+`
+
+const WaveSvg = styled.svg`
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 200%;
+  height: 240px;
   pointer-events: none;
 `
 
-const NetworkLine = styled.line<{ $delay: number }>`
-  stroke-width: 0.15;
-  animation: ${linePulse} ${() => 4 + Math.random() * 3}s ease-in-out infinite;
-  animation-delay: ${({ $delay }) => $delay}s;
-`
-
-const NetworkNode = styled.circle<{ $delay: number }>`
-  fill: #00ff88;
-  animation: ${nodePulse} ${() => 3 + Math.random() * 2}s ease-in-out infinite;
-  animation-delay: ${({ $delay }) => $delay}s;
+const WavePath = styled.path<{ $animDuration: number; $animOffset?: number; $color: string; $opacity: number }>`
+  fill: ${({ $color }) => $color};
+  opacity: ${({ $opacity }) => $opacity};
+  animation: ${waveSlide} ${({ $animDuration }) => $animDuration}s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation-delay: ${({ $animOffset }) => $animOffset ?? 0}s;
 `
 
 const LoginCard = styled.div`
   position: relative;
   z-index: 1;
-  width: 320px;
-  border-radius: 16px;
-  background: linear-gradient(145deg, rgba(15, 15, 25, 0.95), rgba(8, 8, 16, 0.98));
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  width: 330px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.68);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   box-shadow:
-    0 24px 48px rgba(0, 0, 0, 0.6),
-    0 8px 16px rgba(0, 0, 0, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    0 0 60px rgba(14, 165, 233, 0.1),
+    0 8px 40px rgba(2, 132, 199, 0.08),
+    0 2px 8px rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
   -webkit-app-region: none;
   overflow: hidden;
 `
@@ -310,44 +349,67 @@ const LoginCard = styled.div`
 const CardGlow = styled.div`
   position: absolute;
   top: -1px;
-  left: 20%;
-  right: 20%;
+  left: 15%;
+  right: 15%;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(0, 255, 136, 0.5), rgba(0, 168, 255, 0.5), transparent);
+  background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.5), rgba(2, 132, 199, 0.5), transparent);
 `
 
 const CardContent = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 28px 28px 20px;
+  padding: 34px 30px 26px;
 `
 
 const LogoSection = styled.div`
   text-align: center;
-  margin-bottom: 24px;
+  margin-bottom: 26px;
+`
+
+const AiIcon = styled.div`
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 10px;
+  position: relative;
+  box-shadow: 0 4px 20px rgba(14, 165, 233, 0.3);
+  &::after {
+    content: '';
+    position: absolute;
+    inset: -5px;
+    border-radius: 21px;
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.3), rgba(2, 132, 199, 0.2));
+    filter: blur(10px);
+    z-index: -1;
+    animation: ${iconGlow} 3s ease-in-out infinite;
+  }
 `
 
 const BrandName = styled.div`
-  font-size: 20px;
-  font-weight: 800;
-  color: #ffffff;
-  letter-spacing: -0.5px;
+  font-size: 21px;
+  font-weight: 700;
+  color: #0c1929;
+  letter-spacing: -0.3px;
 `
 
 const BrandHighlight = styled.span`
-  background: linear-gradient(135deg, #00ff88, #00a8ff);
+  background: linear-gradient(135deg, #0284c7, #0ea5e9);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 `
 
 const Subtitle = styled.div`
-  font-size: 11px;
+  font-size: 10px;
   color: #64748b;
-  letter-spacing: 2px;
+  letter-spacing: 3px;
   text-transform: uppercase;
-  margin-top: 4px;
+  margin-top: 5px;
 `
 
 const FormSection = styled.div`
@@ -355,31 +417,56 @@ const FormSection = styled.div`
   margin-top: 4px;
 `
 
+const BrowserLoginButton = styled(Button)`
+  height: 44px;
+  border-radius: 13px;
+  font-weight: 600;
+  font-size: 13.5px;
+  background: linear-gradient(135deg, #0ea5e9, #0284c7) !important;
+  border: none !important;
+  color: #fff !important;
+  box-shadow: 0 4px 24px rgba(14, 165, 233, 0.3);
+  transition: all 0.25s;
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 32px rgba(14, 165, 233, 0.45) !important;
+  }
+  &:active {
+    transform: translateY(0);
+  }
+  .anticon,
+  .lucide {
+    color: #fff;
+  }
+`
+
 const inputStyles = `
-  background: rgba(255, 255, 255, 0.04) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  border-radius: 10px !important;
-  color: #ffffff !important;
-  height: 38px;
-  &:hover,
+  background: rgba(255, 255, 255, 0.55) !important;
+  border: 1px solid rgba(2, 132, 199, 0.18) !important;
+  border-radius: 12px !important;
+  color: #0c1929 !important;
+  height: 44px;
+  &:hover {
+    border-color: rgba(2, 132, 199, 0.35) !important;
+  }
   &:focus,
   &.ant-input-affix-wrapper-focused {
-    border-color: rgba(0, 255, 136, 0.4) !important;
-    box-shadow: 0 0 0 2px rgba(0, 255, 136, 0.08) !important;
+    border-color: rgba(14, 165, 233, 0.55) !important;
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1), 0 0 20px rgba(14, 165, 233, 0.06) !important;
   }
   &::placeholder {
-    color: #475569 !important;
+    color: #94a3b8 !important;
   }
   .ant-input {
     background: transparent !important;
-    color: #ffffff !important;
+    color: #0c1929 !important;
     &::placeholder {
-      color: #475569 !important;
+      color: #94a3b8 !important;
     }
   }
 `
 
-const StyledInput = styled(Input)`
+const TokenInput = styled(Input)`
   ${inputStyles}
 `
 
@@ -390,53 +477,32 @@ const TokenInputGroup = styled.div`
 `
 
 const TokenLoginButton = styled(Button)`
-  height: 38px;
-  border-radius: 10px;
+  height: 42px;
+  border-radius: 12px;
   font-weight: 500;
   font-size: 13px;
-  background: rgba(255, 255, 255, 0.04) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  color: #94a3b8 !important;
-  transition: all 0.3s;
+  background: rgba(255, 255, 255, 0.5) !important;
+  border: 1px solid rgba(2, 132, 199, 0.15) !important;
+  color: #334155 !important;
+  transition: all 0.25s;
   &:hover {
-    border-color: rgba(0, 255, 136, 0.4) !important;
-    color: #e2e8f0 !important;
-    background: rgba(255, 255, 255, 0.06) !important;
+    border-color: rgba(14, 165, 233, 0.4) !important;
+    color: #0c1929 !important;
+    background: rgba(255, 255, 255, 0.7) !important;
+    box-shadow: 0 2px 12px rgba(14, 165, 233, 0.1);
   }
 `
 
 const StyledDivider = styled(Divider)`
   &.ant-divider {
-    margin: 12px 0;
-    border-color: rgba(255, 255, 255, 0.08);
+    margin: 16px 0;
+    border-color: rgba(2, 132, 199, 0.12);
     .ant-divider-inner-text {
-      font-size: 11px;
-      color: #475569;
+      font-size: 10px;
+      color: #64748b;
       padding: 0 12px;
+      font-weight: 600;
     }
-  }
-`
-
-const BrowserLoginButton = styled(Button)`
-  height: 38px;
-  border-radius: 10px;
-  font-weight: 600;
-  font-size: 13px;
-  background: linear-gradient(135deg, #00ff88, #00a8ff) !important;
-  border: none !important;
-  color: #050508 !important;
-  box-shadow: 0 4px 20px rgba(0, 255, 136, 0.2);
-  transition: all 0.3s;
-  &:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 28px rgba(0, 255, 136, 0.35) !important;
-  }
-  &:active {
-    transform: translateY(0);
-  }
-  .anticon,
-  .lucide {
-    color: #050508;
   }
 `
 
@@ -444,21 +510,22 @@ const StatusBadge = styled.div`
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  margin-top: 20px;
-  padding: 4px 12px;
-  background: rgba(0, 255, 136, 0.06);
-  border: 1px solid rgba(0, 255, 136, 0.15);
+  margin-top: 22px;
+  padding: 5px 16px;
+  background: rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(2, 132, 199, 0.1);
   border-radius: 20px;
   font-size: 11px;
   color: #64748b;
 `
 
 const StatusDot = styled.div`
-  width: 6px;
-  height: 6px;
-  background: #00ff88;
+  width: 5px;
+  height: 5px;
+  background: #0ea5e9;
   border-radius: 50%;
-  animation: ${dotPulse} 2s infinite;
+  box-shadow: 0 0 6px rgba(14, 165, 233, 0.4);
+  animation: ${dotPulse} 2.5s infinite;
 `
 
 export default LoginPage
