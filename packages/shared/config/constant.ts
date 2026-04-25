@@ -197,15 +197,10 @@ export const MB = 1024 * KB
 export const GB = 1024 * MB
 export const defaultLanguage = 'en-US'
 
-export enum FeedUrl {
-  PRODUCTION = 'https://github.com/liuyaaixxa/teniulink-node-client/releases/latest/download',
-  GITHUB_LATEST = 'https://github.com/liuyaaixxa/teniulink-node-client/releases/latest/download'
-}
+export const FEED_URL = 'https://github.com/liuyaaixxa/teniulink-node-client/releases/latest/download'
 
-export enum UpdateConfigUrl {
-  GITHUB = 'https://raw.githubusercontent.com/liuyaaixxa/teniulink-node-client/refs/heads/main/app-upgrade-config.json',
-  GITCODE = 'https://raw.githubusercontent.com/liuyaaixxa/teniulink-node-client/refs/heads/main/app-upgrade-config.json'
-}
+export const UPDATE_CONFIG_URL =
+  'https://raw.githubusercontent.com/liuyaaixxa/teniulink-node-client/refs/heads/main/app-upgrade-config.json'
 
 export enum UpgradeChannel {
   LATEST = 'latest', // 最新稳定版本

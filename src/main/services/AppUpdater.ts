@@ -2,7 +2,7 @@ import { loggerService } from '@logger'
 import { isWin } from '@main/constant'
 import { getIpCountry } from '@main/utils/ipService'
 import { generateUserAgent } from '@main/utils/systemInfo'
-import { APP_NAME, FeedUrl, UpdateConfigUrl, UpdateMirror, UpgradeChannel } from '@shared/config/constant'
+import { APP_NAME, FEED_URL, UPDATE_CONFIG_URL, UpdateMirror, UpgradeChannel } from '@shared/config/constant'
 import { IpcChannel } from '@shared/IpcChannel'
 import type { UpdateInfo } from 'builder-util-runtime'
 import { CancellationToken } from 'builder-util-runtime'
@@ -148,7 +148,7 @@ export default class AppUpdater {
    * @returns UpdateConfig object or null if fetch fails
    */
   private async _fetchUpdateConfig(mirror: UpdateMirror): Promise<UpdateConfig | null> {
-    const configUrl = mirror === UpdateMirror.GITCODE ? UpdateConfigUrl.GITCODE : UpdateConfigUrl.GITHUB
+    const configUrl = UPDATE_CONFIG_URL
 
     try {
       logger.info(`Fetching update config from ${configUrl} (mirror: ${mirror})`)
@@ -264,7 +264,7 @@ export default class AppUpdater {
 
     logger.info('Failed to fetch update config, falling back to default feed URL')
     // Fallback: use default feed URL based on mirror
-    const defaultFeedUrl = mirror === UpdateMirror.GITCODE ? FeedUrl.PRODUCTION : FeedUrl.GITHUB_LATEST
+    const defaultFeedUrl = FEED_URL
 
     logger.info(`Using fallback feed URL: ${defaultFeedUrl}`)
     this._setChannel(UpgradeChannel.LATEST, defaultFeedUrl)
