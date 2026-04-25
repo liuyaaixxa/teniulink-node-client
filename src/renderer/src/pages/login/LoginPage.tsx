@@ -47,6 +47,7 @@ const LoginPage: FC = () => {
   const [tokenInput, setTokenInput] = useState('')
   const [tokenLoginLoading, setTokenLoginLoading] = useState(false)
   const [browserLoginLoading, setBrowserLoginLoading] = useState(false)
+  const [countdown, setCountdown] = useState(0)
   const browserLoginStateRef = useRef<string | null>(null)
   const cleanupRef = useRef<(() => void) | null>(null)
   const dispatch = useAppDispatch()
@@ -59,14 +60,30 @@ const LoginPage: FC = () => {
     }
   }, [])
 
+  useEffect(() => {
+    if (!browserLoginLoading || countdown <= 0) return
+    if (countdown === 1) {
+      const timer = setTimeout(() => {
+        setCountdown(0)
+        setBrowserLoginLoading(false)
+        cleanupRef.current?.()
+      }, 1000)
+      return () => clearTimeout(timer)
+    }
+    const timer = setTimeout(() => setCountdown((c) => c - 1), 1000)
+    return () => clearTimeout(timer)
+  }, [countdown, browserLoginLoading])
+
   const handleBrowserLogin = useCallback(async () => {
     setBrowserLoginLoading(true)
+    setCountdown(180)
 
     try {
       const result = await window.api.authStartBrowserLogin()
       if (!result.success || !result.state) {
         message.error(result.error || t('login_page.browser_login_failed'))
         setBrowserLoginLoading(false)
+        setCountdown(0)
         return
       }
 
@@ -103,23 +120,13 @@ const LoginPage: FC = () => {
           message.error(t('login_page.error_network'))
         } finally {
           setBrowserLoginLoading(false)
+          setCountdown(0)
           cleanup()
         }
       })
 
-      // Timeout after 10 minutes
-      const timeoutId = setTimeout(
-        () => {
-          message.warning(t('login_page.browser_login_timeout'))
-          setBrowserLoginLoading(false)
-          cleanup()
-        },
-        10 * 60 * 1000
-      )
-
       const cleanup = () => {
         removeListener()
-        clearTimeout(timeoutId)
         browserLoginStateRef.current = null
         cleanupRef.current = null
       }
@@ -128,6 +135,7 @@ const LoginPage: FC = () => {
     } catch {
       message.error(t('login_page.error_network'))
       setBrowserLoginLoading(false)
+      setCountdown(0)
     }
   }, [dispatch, t])
 
@@ -195,7 +203,9 @@ const LoginPage: FC = () => {
               onClick={handleBrowserLogin}
               loading={browserLoginLoading}
               block>
-              {browserLoginLoading ? t('login_page.browser_login_waiting') : t('login_page.browser_login')}
+              {browserLoginLoading
+                ? `${t('login_page.browser_login_waiting')} (${countdown}s)`
+                : t('login_page.browser_login')}
             </BrowserLoginButton>
             <StyledDivider>{t('login_page.or_divider', 'OR')}</StyledDivider>
             <TokenInputGroup>
