@@ -2737,7 +2737,7 @@
                   "properties": {
                     "name": {
                       "type": "string",
-                      "example": "Cherry Studio API"
+                      "example": "Teniu API"
                     },
                     "version": {
                       "type": "string",

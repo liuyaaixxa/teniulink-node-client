@@ -450,8 +450,28 @@ const TeniuCloudSettings: FC = () => {
               {paginatedModels.map((model) => (
                 <ModelItem key={model.id}>
                   <ModelInfo>
-                    <ModelName>{model.name}</ModelName>
-                    <ModelId>{model.id}</ModelId>
+                    <ModelNameRow>
+                      <ModelName>{model.name}</ModelName>
+                      <ModelCopyButton
+                        onClick={() => {
+                          void navigator.clipboard.writeText(model.name)
+                          window.toast.success(t('teniuCloud.messages.urlCopied'))
+                        }}>
+                        <Copy size={10} />
+                      </ModelCopyButton>
+                    </ModelNameRow>
+                    <ModelIdRow>
+                      <ModelId>
+                        {model.providerName}:{model.providerModelId}
+                      </ModelId>
+                      <ModelCopyButton
+                        onClick={() => {
+                          void navigator.clipboard.writeText(model.id)
+                          window.toast.success(t('teniuCloud.messages.urlCopied'))
+                        }}>
+                        <Copy size={10} />
+                      </ModelCopyButton>
+                    </ModelIdRow>
                   </ModelInfo>
                   <ModelProvider>{model.providerName}</ModelProvider>
                 </ModelItem>
@@ -876,6 +896,10 @@ const ModelItem = styled.div`
   background: var(--color-background-soft);
   border-radius: 6px;
   border: 1px solid var(--color-border);
+
+  &:hover button {
+    opacity: 1;
+  }
 `
 
 const ModelInfo = styled.div`
@@ -894,6 +918,39 @@ const ModelId = styled.div`
   font-size: 11px;
   color: var(--color-text-3);
   font-family: monospace;
+`
+
+const ModelNameRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 4px;
+`
+
+const ModelIdRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 4px;
+`
+
+const ModelCopyButton = styled.button`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--color-text-4);
+  cursor: pointer;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: all 0.15s;
+  &:hover {
+    background: var(--color-fill-2);
+    color: var(--color-text-1);
+  }
 `
 
 const ModelProvider = styled.div`
